@@ -92,7 +92,7 @@ S2 做不下去（plan 有錯、spec 有漏）時**停下來回報**，不要自
 
 | 關卡 | 誰簽 | 簽在哪 | 檢查表在哪 |
 | --- | --- | --- | --- |
-| **Gate A**（實作前） | Reviewer | feature 檔的 Gate A 段，commit 進去 | feature 範本裡，6 條 |
+| **Gate A**（實作前） | Reviewer | feature 檔的 Gate A 段，commit 進去 | feature 範本裡，7 條 |
 | **Gate B**（merge 前） | Reviewer | GitHub PR 的 **Approve** | PR 模板裡，4 條 |
 
 檢查表只住那兩處，本文件不複製 —— 複製就會漂移。
@@ -108,7 +108,8 @@ S2 做不下去（plan 有錯、spec 有漏）時**停下來回報**，不要自
 
 | 變更類型 | 人類要看什麼 |
 | --- | --- |
-| 只有文件（`.md`） | 審查結論 ＋ agent 的摘要或 PR 整理就夠，不逐 hunk 看 |
+| spec（feature 檔、`SYSTEM.md`） | **人類讀全文，不看摘要** —— 它是 agent 起草的，後面所有程式碼都照它長 |
+| 其他文件（`.md`） | 審查結論 ＋ agent 的摘要或 PR 整理就夠，不逐 hunk 看 |
 | 程式碼（`.gd`、`.tscn`、`project.godot`） | 必須掃過每個 hunk，看不懂的要問 |
 | 刪除或搬移檔案 | 必須看，不管什麼類型 |
 
@@ -120,7 +121,7 @@ agent 展示 diff 時固定四行，讓人類掃得快：**改了哪些檔／為
 
 **diff 裡有程式碼，人類 review 之前先讓 agent 審。** 審查成本從人移到機器。
 
-範圍和上表同一條線：`.gd`、`.tscn`、`project.godot` 要過審；**只動 `.md` 的變更不用**（純文件的錯是讀得出來的，獨立審查加不了判斷）。哪一邊都不確定時就過審。
+範圍和上表同一條線：`.gd`、`.tscn`、`project.godot` 要過審；**只動 `.md` 的變更不用**（純文件的錯是讀得出來的，獨立審查加不了判斷）。**spec 由人審全文，見上表** —— 它雖然是 `.md`，卻由 Analyst agent 起草。哪一邊都不確定時就過審。
 
 一條規則，兩個呼叫點：**審查 agent 必須是新 session，只收 feature 檔與 diff，不收實作時的對話** —— 否則它會替自己辯護。
 
@@ -195,4 +196,4 @@ gh pr list --state merged --json number,title,reviewDecision
 | --- | --- | --- | --- |
 | v1.0 | 2026-11-09 | 初版：三道關卡、兩層 spec、人類核准 diff 後由 agent commit、agent 紀錄裁切規則 | 依 `VISION.md` §10 建立本組 workflow |
 | v1.1 | 2026-11-09 | 記錄 §6 的例外：`main` 無法設 branch protection，改由人工把關 | 免費方案的私有 repo 不支援 ruleset（API 回 403）。PR #1 就在沒有 approve 的情況下被 merge |
-| v2.0 | 2026-11-10 | 關卡 3 道→2 道；五個檔併成兩個；檢查表改為單一來源；加文件預算、PR 模板、merge 不 squash、自我稽核命令、diff 核准深度分級、審查 agent | 量測結果：`docs/` 已累積 25,226 字，GDScript 與 spec 各 0 份。原因有三 —— 同一事實被記 4–6 次、固定成本與 feature 大小無關、雜務也開 run 檔。作業要求的四項紀錄一條沒少，砍掉的是重複與儀式。另外人類逐行讀 diff 在文件變更上成本不成比例，改為按變更類型分級，並要求**人類 review 前先由新 session 的審查 agent 審一遍**（把成本從人移到機器，Verifier 的獨立性因此成為硬規則而非建議；組內定為只有程式碼要過審，純文件免審）——這是**改規則，不是改紀錄**，`000-workflow-v1/gates.md` 的事故列保持原樣。版本號依本節「結構變動 +1.0」定為 v2.0 —— 草稿原標 v1.2，由 PR #3 的 Reviewer 指出不符本節規則 |
+| v2.0 | 2026-11-10 | 關卡 3 道→2 道；五個檔併成兩個；檢查表改為單一來源；加文件預算、PR 模板、merge 不 squash、自我稽核命令、diff 核准深度分級、審查 agent | 量測結果：`docs/` 已累積 25,226 字，GDScript 與 spec 各 0 份。原因有三 —— 同一事實被記 4–6 次、固定成本與 feature 大小無關、雜務也開 run 檔。作業要求的四項紀錄一條沒少，砍掉的是重複與儀式。另外人類逐行讀 diff 在文件變更上成本不成比例，改為按變更類型分級，並要求**人類 review 前先由新 session 的審查 agent 審一遍**（把成本從人移到機器，Verifier 的獨立性因此成為硬規則而非建議；組內定為只有程式碼要過審，純文件免審；spec 另案 —— 它由 Analyst agent 起草，改為人類讀全文）——這是**改規則，不是改紀錄**，`000-workflow-v1/gates.md` 的事故列保持原樣。版本號依本節「結構變動 +1.0」定為 v2.0 —— 草稿原標 v1.2，由 PR #3 的 Reviewer 指出不符本節規則 |
