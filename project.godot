@@ -1,0 +1,23 @@
+; Engine configuration file.
+; Godot 4.7.2 stable — pinned per VISION.md section 10 (三組必須一致).
+; 共用骨架：版本 / renderer / 解析度 / stretch。
+; 不共用：script、scene、autoload、美術 — 各組自行新增，不回頭同步。
+
+config_version=5
+
+[application]
+
+config/name="group-AI"
+config/features=PackedStringArray("4.7", "Forward Plus")
+
+[display]
+
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+
+[rendering]
+
+renderer/rendering_method="forward_plus"
+rendering_device/driver.windows="vulkan"
