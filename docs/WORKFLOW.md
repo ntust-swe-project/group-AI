@@ -39,7 +39,7 @@
 | Analyst | S1 | spec 草稿 + 開放問題 | 自己回答開放問題、自己定數值 |
 | Planner | S1 | plan 與 task 拆解 | 引入 spec 沒有的需求 |
 | Implementer | S2 | 程式碼與測試 | 超出 tasks 範圍 |
-| Verifier | S2、S3 | S2：diff 審查結論／S3：逐條驗收結果 | 改碼、改驗收條件、讀實作時的對話 |
+| Verifier | S2（含程式碼時）、S3 | S2：diff 審查結論／S3：逐條驗收結果 | 改碼、改驗收條件、讀實作時的對話 |
 
 Analyst／Planner／Implementer 可以是同一個 session 的不同階段。**Verifier 不行** —— 見 §6「審查 agent」。
 
@@ -80,7 +80,7 @@ docs/
 | S0 立項 | Owner | 建 feature 檔、開 branch `spec/NNN-<slug>` |
 | S1 spec + plan | Analyst／Planner，Owner 改 | feature 檔的 spec／plan／tasks 三段 |
 | **Gate A** | Reviewer | 核准才能動工 |
-| S2 實作 | Implementer → Verifier | 逐 task：實作 → **Verifier 新 session 審 diff** → 展示 diff ＋審查結論 → Owner 核准 → agent commit → push |
+| S2 實作 | Implementer → Verifier | 逐 task：實作 → **有程式碼就先由 Verifier 新 session 審 diff** → 展示 diff（＋審查結論）→ Owner 核准 → agent commit → push |
 | S3 驗證 | Verifier（新 session） | 逐條驗收結果 + 測試摘要 |
 | S4 PR | Owner | 依 PR 模板開 PR，貼上 S3 的驗收結果 |
 | **Gate B** | Reviewer | Approve 後 merge |
@@ -116,16 +116,20 @@ agent 展示 diff 時固定四行，讓人類掃得快：**改了哪些檔／為
 
 分級只調整**深度**，不取消核准 —— 每個 commit 前都還是要有人類說「可以」。
 
-### 審查 agent（必要）
+### 審查 agent（程式碼必要）
 
-**人類 review 之前，先讓 agent 審。** 審查成本從人移到機器。
+**diff 裡有程式碼，人類 review 之前先讓 agent 審。** 審查成本從人移到機器。
+
+範圍和上表同一條線：`.gd`、`.tscn`、`project.godot` 要過審；**只動 `.md` 的變更不用**（純文件的錯是讀得出來的，獨立審查加不了判斷）。哪一邊都不確定時就過審。
 
 一條規則，兩個呼叫點：**審查 agent 必須是新 session，只收 feature 檔與 diff，不收實作時的對話** —— 否則它會替自己辯護。
 
 | 呼叫點 | 審什麼 | 輸出 |
 | --- | --- | --- |
-| S2 每個 task | 這個 diff 有沒有做到該 task、有沒有超出 tasks 範圍 | 三項：不符之處／超範圍的改動／明顯 bug |
+| S2 每個含程式碼的 task | 這個 diff 有沒有做到該 task、有沒有超出 tasks 範圍 | 三項：不符之處／超範圍的改動／明顯 bug |
 | S3 整份 | 對 feature 檔的驗收條件逐條驗 | 逐條過或不過，不過的寫實際行為 |
+
+feature 幾乎都含程式碼，所以 S3 實際上一律要審；免審的是純文件變更（改流程、補紀錄、修錯字）。
 
 - 人類**先看審查結論，再按 §6 的分級掃 diff**。
 - **不取代人類核准。** 審查 agent 和 Implementer 共用同一個模型，共享盲點：它抓得到「超出範圍」「和驗收條件不符」這類可機械比對的東西，抓不到「兩邊都誤解了 spec」。
@@ -191,4 +195,4 @@ gh pr list --state merged --json number,title,reviewDecision
 | --- | --- | --- | --- |
 | v1.0 | 2026-11-09 | 初版：三道關卡、兩層 spec、人類核准 diff 後由 agent commit、agent 紀錄裁切規則 | 依 `VISION.md` §10 建立本組 workflow |
 | v1.1 | 2026-11-09 | 記錄 §6 的例外：`main` 無法設 branch protection，改由人工把關 | 免費方案的私有 repo 不支援 ruleset（API 回 403）。PR #1 就在沒有 approve 的情況下被 merge |
-| v2.0 | 2026-11-10 | 關卡 3 道→2 道；五個檔併成兩個；檢查表改為單一來源；加文件預算、PR 模板、merge 不 squash、自我稽核命令、diff 核准深度分級、審查 agent | 量測結果：`docs/` 已累積 25,226 字，GDScript 與 spec 各 0 份。原因有三 —— 同一事實被記 4–6 次、固定成本與 feature 大小無關、雜務也開 run 檔。作業要求的四項紀錄一條沒少，砍掉的是重複與儀式。另外人類逐行讀 diff 在文件變更上成本不成比例，改為按變更類型分級，並要求**人類 review 前先由新 session 的審查 agent 審一遍**（把成本從人移到機器，Verifier 的獨立性因此成為硬規則而非建議）——這是**改規則，不是改紀錄**，`000-workflow-v1/gates.md` 的事故列保持原樣。版本號依本節「結構變動 +1.0」定為 v2.0 —— 草稿原標 v1.2，由 PR #3 的 Reviewer 指出不符本節規則 |
+| v2.0 | 2026-11-10 | 關卡 3 道→2 道；五個檔併成兩個；檢查表改為單一來源；加文件預算、PR 模板、merge 不 squash、自我稽核命令、diff 核准深度分級、審查 agent | 量測結果：`docs/` 已累積 25,226 字，GDScript 與 spec 各 0 份。原因有三 —— 同一事實被記 4–6 次、固定成本與 feature 大小無關、雜務也開 run 檔。作業要求的四項紀錄一條沒少，砍掉的是重複與儀式。另外人類逐行讀 diff 在文件變更上成本不成比例，改為按變更類型分級，並要求**人類 review 前先由新 session 的審查 agent 審一遍**（把成本從人移到機器，Verifier 的獨立性因此成為硬規則而非建議；組內定為只有程式碼要過審，純文件免審）——這是**改規則，不是改紀錄**，`000-workflow-v1/gates.md` 的事故列保持原樣。版本號依本節「結構變動 +1.0」定為 v2.0 —— 草稿原標 v1.2，由 PR #3 的 Reviewer 指出不符本節規則 |
