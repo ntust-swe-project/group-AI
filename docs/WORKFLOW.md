@@ -1,6 +1,6 @@
 # AI-Agent 組 開發流程（Spec-Driven Development）
 
-**v1.0 · 2026-11-09**
+**v1.1 · 2026-11-09**
 
 本文件可滾動修改，改法見第 12 節。
 
@@ -423,6 +423,7 @@ branch 直接廢棄，不 merge。在 `agent-runs/NNN-*/gates.md` 記一筆廢�
 | 版本 | 日期 | 改了什麼 | 為什麼 |
 | --- | --- | --- | --- |
 | v1.0 | 2026-11-09 | 初版：三道關卡、兩層 spec、人類核准 diff 後由 agent commit、agent 紀錄裁切規則 | 依 `VISION.md` 第 10 節建立本組 workflow；作業要求定義角色、產物、循環與 review gate |
+| v1.1 | 2026-11-09 | 記錄 §6 的例外：`main` 無法設定 branch protection，「不直接 push、一律經 PR 且須一個 approve」改由人工把關 | GitHub 免費方案的私有 repo 不支援 ruleset／branch protection（API 回 403）。PR #1 就在沒有 approve 的情況下被 merge，證明單靠約定擋不住，需要明文記錄並由兩人互相提醒 |
 
 ---
 
