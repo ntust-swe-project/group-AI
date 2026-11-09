@@ -1,6 +1,6 @@
 # AI-Agent 組 開發流程（Spec-Driven Development）
 
-**v1.2 · 2026-11-10** — 可滾動修改，見 §11
+**v2.0 · 2026-11-10** — 可滾動修改，見 §11
 
 ## 1. 這份文件
 
@@ -191,4 +191,4 @@ gh pr list --state merged --json number,title,reviewDecision
 | --- | --- | --- | --- |
 | v1.0 | 2026-11-09 | 初版：三道關卡、兩層 spec、人類核准 diff 後由 agent commit、agent 紀錄裁切規則 | 依 `VISION.md` §10 建立本組 workflow |
 | v1.1 | 2026-11-09 | 記錄 §6 的例外：`main` 無法設 branch protection，改由人工把關 | 免費方案的私有 repo 不支援 ruleset（API 回 403）。PR #1 就在沒有 approve 的情況下被 merge |
-| v1.2 | 2026-11-10 | 關卡 3 道→2 道；五個檔併成兩個；檢查表改為單一來源；加文件預算、PR 模板、merge 不 squash、自我稽核命令、diff 核准深度分級、審查 agent | 量測結果：`docs/` 已累積 25,226 字，GDScript 與 spec 各 0 份。原因有三 —— 同一事實被記 4–6 次、固定成本與 feature 大小無關、雜務也開 run 檔。作業要求的四項紀錄一條沒少，砍掉的是重複與儀式。另外人類逐行讀 diff 在文件變更上成本不成比例，改為按變更類型分級，並要求**人類 review 前先由新 session 的審查 agent 審一遍**（把成本從人移到機器，Verifier 的獨立性因此成為硬規則而非建議）——這是**改規則，不是改紀錄**，`000-workflow-v1/gates.md` 的事故列保持原樣 |
+| v2.0 | 2026-11-10 | 關卡 3 道→2 道；五個檔併成兩個；檢查表改為單一來源；加文件預算、PR 模板、merge 不 squash、自我稽核命令、diff 核准深度分級、審查 agent | 量測結果：`docs/` 已累積 25,226 字，GDScript 與 spec 各 0 份。原因有三 —— 同一事實被記 4–6 次、固定成本與 feature 大小無關、雜務也開 run 檔。作業要求的四項紀錄一條沒少，砍掉的是重複與儀式。另外人類逐行讀 diff 在文件變更上成本不成比例，改為按變更類型分級，並要求**人類 review 前先由新 session 的審查 agent 審一遍**（把成本從人移到機器，Verifier 的獨立性因此成為硬規則而非建議）——這是**改規則，不是改紀錄**，`000-workflow-v1/gates.md` 的事故列保持原樣。版本號依本節「結構變動 +1.0」定為 v2.0 —— 草稿原標 v1.2，由 PR #3 的 Reviewer 指出不符本節規則 |
