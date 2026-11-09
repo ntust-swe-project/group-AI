@@ -12,7 +12,7 @@
 | 提出者 | <Owner> |
 | Reviewer | <另一位組員> |
 | branch | `docs/workflow-v1` |
-| PR | #__ |
+| PR | [#1](https://github.com/ntust-swe-project/group-AI/pull/1) |
 | 日期 | 2026-11-09 開 PR ／ ____-__-__ approve |
 | 結果 | 待 review |
 
