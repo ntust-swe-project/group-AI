@@ -10,6 +10,7 @@ description: Godot Unit Testing (GUT) framework for GDScript. Covers test struct
 > Changes from the original (2026-11-10):
 > 1. Doubles no longer return `null`. Since GUT 9.7.0 (Godot 4.7 type checks) they return the default value of the method's declared return type, and `to_do_nothing()` does the same. Fixed in "Creating Doubles" and "Stubbing".
 > 2. Added: stubbing a return value of the wrong type logs a GUT error and an engine error.
+> 3. Dropped `-d` from every command. With `-d`, a test script that fails to parse drops Godot into its interactive debugger and the run hangs until killed. Without `-d`, GUT skips that script and still exits `0`; this repo's `test/hooks/post_run.gd` turns that into exit `1`.
 >
 > Checked against GUT 9.7.1 source: every function name, CLI flag and `.gutconfig.json` key below exists. Behaviour claims were only checked against the 9.6.0 and 9.7.0 release notes.
 
@@ -322,24 +323,26 @@ Configure in `.gutconfig.json`:
 
 Tests are run from the command line — no GUI required. Always include `-gexit` so the process exits after the run. Returns `0` on success, `1` on any failure (suitable for CI).
 
+**Do not add `-d` in non-interactive runs** (agents, CI): a parse error then opens Godot's interactive debugger and the process hangs. **A script that fails to parse is skipped with only a warning and does not fail the run** — in this repo `test/hooks/post_run.gd` (set as `post_run_script` in `.gutconfig.json`) fails the run when any `test_*.gd` was not collected or no test ran.
+
 ```bash
 # Run all tests in a directory
-godot -d -s addons/gut/gut_cmdln.gd --path "$PWD" -gdir=res://test -gexit
+godot -s addons/gut/gut_cmdln.gd --path "$PWD" -gdir=res://test -gexit
 
 # Run with subdirectory discovery
-godot -d -s addons/gut/gut_cmdln.gd --path "$PWD" -gdir=res://test -ginclude_subdirs -gexit
+godot -s addons/gut/gut_cmdln.gd --path "$PWD" -gdir=res://test -ginclude_subdirs -gexit
 
 # Run a specific test file
-godot -d -s addons/gut/gut_cmdln.gd --path "$PWD" -gtest=res://test/unit/test_foo.gd -gexit
+godot -s addons/gut/gut_cmdln.gd --path "$PWD" -gtest=res://test/unit/test_foo.gd -gexit
 
 # Run tests matching a name substring
-godot -d -s addons/gut/gut_cmdln.gd --path "$PWD" -gdir=res://test -gunit_test_name=test_my_method -gexit
+godot -s addons/gut/gut_cmdln.gd --path "$PWD" -gdir=res://test -gunit_test_name=test_my_method -gexit
 
 # Run only scripts whose filename contains a string
-godot -d -s addons/gut/gut_cmdln.gd --path "$PWD" -gdir=res://test -gselect=foo -gexit
+godot -s addons/gut/gut_cmdln.gd --path "$PWD" -gdir=res://test -gselect=foo -gexit
 
 # Headless / CI (Godot 4)
-godot --headless -d -s addons/gut/gut_cmdln.gd --path "$PWD" -gdir=res://test -gexit
+godot --headless -s addons/gut/gut_cmdln.gd --path "$PWD" -gdir=res://test -gexit
 ```
 
 ### Config File (`.gutconfig.json`)
@@ -360,7 +363,7 @@ Put this at the project root to avoid repeating CLI flags:
 
 With a config file in place, the minimum invocation is:
 ```bash
-godot --headless -d -s addons/gut/gut_cmdln.gd --path "$PWD"
+godot --headless -s addons/gut/gut_cmdln.gd --path "$PWD"
 ```
 
 Key CLI flags:
