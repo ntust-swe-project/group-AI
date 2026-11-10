@@ -15,13 +15,14 @@ commit 這份文件時用 scope `ai-log`。
 | 2026-11-09 | Claude Code 2.1.319 | Claude Opus 5 | `superpowers` plugin v7.0.0（官方 plugin cache）：SessionStart hook 注入 skill 指引、本次使用其 `brainstorming` skill。未啟用自訂 hooks、未啟用 subagent 編排 | 無 |
 | 2026-11-09 | Claude Code 2.1.312（Claude 桌面版 Code 分頁） | Claude Opus 5.5 | 無 hooks、無 subagent 編排。output style 設為 Learning（AI 會把部分內容留給人類親自完成，並附解說） | 無 |
 | 2026-11-10 | Claude Code 2.1.322（CLI） | Claude Opus 5.5 | `superpowers` plugin v7.0.0：SessionStart hook 注入 skill 指引，本次使用其 `receiving-code-review` skill。未啟用自訂 hooks、未啟用 subagent 編排 | 無 |
+| 2026-11-10 | Claude Code 2.1.322（CLI） | Claude Opus 5.5 | `superpowers` plugin v7.0.0：SessionStart hook 注入 skill 指引，本次使用其 `brainstorming` skill。**repo 內附** `Donchitos/Claude-Code-Game-Studios` v1.3.0（`abc0de7`）的 agent、skill 與路徑規則（`.claude/rules/`，碰到對應檔案自動載入）；該模板的 18 個 hooks 與狀態列**未啟用**、根目錄 `CLAUDE.md` 未搬。另附 `rockerBOO/gut-skill`（`0259877`，本組改過）。未啟用自訂 hooks、未啟用 subagent 編排；本次用過 `web-fetch` subagent 一次讀網頁 | GUT 9.7.1（Godot 單元測試，非 AI 工具） |
 
 補充說明：
 
-- 本組**未**採用 `VISION.md` 第 10 節提到的 `Donchitos/Claude-Code-Game-Studios` 模板，因此沒有該模板的 per-tool-call bash hooks。
+- 2026-11-10 起，`VISION.md` 第 10 節提到的 `Donchitos/Claude-Code-Game-Studios` 模板**當工具**放進 repo（PR #10）：agent 與 skill 可用，但它的 hooks 未啟用、它的工作室流程不採用。裝了什麼、哪些不要用見 `docs/TOOLS.md`。repo 內附的工具 pull 下來對兩人都生效，組員 B 開始用時也在上表加一列。
 - `.claude/settings.local.json` 目前只關掉一個與本專題無關的 skill，沒有其他自動化設定。
 - `WORKFLOW.md` 第 2.2 節的四個 agent 職能目前以「同一個 session 的不同階段」實作，不是獨立 subagent。改成 subagent 編排時要在上表新增一列。
-- 上表兩列**並存**，不是替換：第 1 列是組員 A 的環境，第 2 列是組員 B 的環境。兩人的工具版本、模型與設定不同，使用紀錄裡由誰的環境產出，看「任務」欄的說明。
+- 上表各列**並存**，不是替換：第 1、3、4 列是組員 A 的環境，第 2 列是組員 B 的環境。兩人的工具版本、模型與設定不同，使用紀錄裡由誰的環境產出，看「任務」欄的說明。
 
 ---
 
@@ -53,6 +54,7 @@ commit 這份文件時用 scope `ai-log`。
 | 20 | 2026-11-10 | PR #5 審查第一輪（組員 B 環境） | 請 AI 對照 `SYSTEM.md` 全文與 PR #5 內文找出問題，並依 Reviewer 的決定（S1 分離、SC9／五條不做／15 個名稱同意）起草 Request changes 意見 | 接受 | | AI 指出 S3 七條需求有六條與《缺氧》重疊、spec 開頭「不寫機制」與 SC4／SC7／S4 矛盾、agent 改 `project-common` 未記事故；「組內決定」的疑慮因組員 B 確認有參與而撤回，草稿未修改即送出 | 0.4h |
 | 21 | 2026-11-10 | PR #5 複查（組員 B 環境） | 請 AI 複查組員 A 的三個新 commit，並起草 approve 意見 | 修正後接受 | | AI 指出 ai-log #19「`project-common` 未被修改」的證據時間窗口晚於事件、並承認自己第一輪建議的「名稱另取」不準確；組員 A 在群組說明 agent 曾開始修改後改寫後續段落，組員 B 再把「你」改為「組員 A」以免旁人看不懂 | 0.7h |
 | 22 | 2026-11-10 | workflow v3.0（組員 A 環境） | 請 AI 依組內決定取消 Reviewer 角色，改 `WORKFLOW.md`、PR 模板、feature 範本、README 並開 PR #9 | 接受 | | 範圍由組員 A 決定（Gate A、Gate B 都由 Owner 自簽）。AI 指出 §7 的 `reviewDecision` 稽核命令在自審後一律為空，改成列出所有直接 push 的命令；修改流程本身仍要另一人 approve（§11）是 AI 提議、組員 A 同意保留 | 待填 |
+| 23 | 2026-11-10 | AI 工具導入（組員 A 環境） | 請 AI 評估並導入 Game Studios 模板、GUT 與 GUT skill，寫 `docs/TOOLS.md`（PR #10），並把 v2.0 刪掉的 GUT 規則補回 WORKFLOW（PR #11） | 接受 | | 「模板當工具、不採用其流程」與「hooks 先關」由組員 A 決定，依據是 AI 讀過 hook 腳本後的評估：它們會在每個 session 注入模板流程。AI 建議不採用組員 A 找的 game-art skill（只有美術建議、不產生素材），組員 A 同意。AI 發現 GUT skill 寫於 Godot 4.7 之前、double 回傳值已過時，對 GUT 9.7.1 原始碼核對並實測後修正；README「AI 工具三組一致」與 VISION 矛盾，組員 A 指出是 README 早於 VISION 定案 | 待填 |
 
 **結果**：`接受` ／ `修正後接受` ／ `部分接受` ／ `拒絕`
 
@@ -66,13 +68,13 @@ commit 這份文件時用 scope `ai-log`。
 
 | 項目 | 數 |
 | --- | --- |
-| 紀錄筆數 | 22 |
-| 接受 ／ 修正後接受 ／ 部分接受 ／ 拒絕 | 10 ／ 9 ／ 3 ／ 0 |
+| 紀錄筆數 | 23 |
+| 接受 ／ 修正後接受 ／ 部分接受 ／ 拒絕 | 11 ／ 9 ／ 3 ／ 0 |
 | `API` 筆數 | 0 |
 | `INV` 筆數（含 `DUP`） | 0 |
-| 累計工時 | ≥ 3.6h（#1–#3、#6–#12、#17–#19、#22 待組員 A 補） |
+| 累計工時 | ≥ 3.6h（#1–#3、#6–#12、#17–#19、#22–#23 待組員 A 補） |
 
-統計區間：2026-11-09 起（repo 初始化至 PR #9 開立）。
+統計區間：2026-11-09 起（repo 初始化至 PR #11 開立）。
 
 ---
 
