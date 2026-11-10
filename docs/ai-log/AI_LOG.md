@@ -17,13 +17,14 @@ commit 這份文件時用 scope `ai-log`。
 | 2026-11-10 | Claude Code 2.1.322（CLI） | Claude Opus 5.5 | `superpowers` plugin v7.0.0：SessionStart hook 注入 skill 指引，本次使用其 `receiving-code-review` skill。未啟用自訂 hooks、未啟用 subagent 編排 | 無 |
 | 2026-11-10 | Claude Code 2.1.322（CLI） | Claude Opus 5.5 | `superpowers` plugin v7.0.0：SessionStart hook 注入 skill 指引，本次使用其 `brainstorming` skill。**repo 內附** `Donchitos/Claude-Code-Game-Studios` v1.3.0（`abc0de7`）的 agent、skill 與路徑規則（`.claude/rules/`，碰到對應檔案自動載入）；該模板的 18 個 hooks 與狀態列**未啟用**、根目錄 `CLAUDE.md` 未搬。另附 `rockerBOO/gut-skill`（`0259877`，本組改過）。未啟用自訂 hooks、未啟用 subagent 編排；本次用過 `web-fetch` subagent 一次讀網頁 | GUT 9.7.1（Godot 單元測試，非 AI 工具） |
 | 2026-11-10 | Claude Code 2.1.312（Claude 桌面版 Code 分頁） | Claude Opus 5.5 | 無 hooks、無 subagent 編排，output style 為 Learning。自 PR #10 起，repo 內附的模板 skill 在處理 `group-AI/` 底下的檔案時可被載入；本列生效時尚未使用任何一個 | 無 |
+| 2026-11-10 | Claude Code 2.1.322（CLI） | Claude Opus 5.5 | 同第 4 列，另加 **subagent 編排**：審查 agent 與 S3 Verifier 改用新開的 subagent（repo 內附 Game Studios 的 `qa-tester`），只給 feature 檔與 diff，不給對話；讀網頁用 `web-fetch` subagent。另用 `superpowers` 的 `test-driven-development` skill 與本組 `/gut` skill | GUT 9.7.1 |
 
 補充說明：
 
 - 2026-11-10 起，`VISION.md` 第 10 節提到的 `Donchitos/Claude-Code-Game-Studios` 模板**當工具**放進 repo（PR #10）：agent 與 skill 可用，但它的 hooks 未啟用、它的工作室流程不採用。裝了什麼、哪些不要用見 `docs/TOOLS.md`。repo 內附的工具 pull 下來對兩人都生效，組員 B 開始用時也在上表加一列。
 - `.claude/settings.local.json` 目前只關掉一個與本專題無關的 skill，沒有其他自動化設定。
-- `WORKFLOW.md` 第 2.2 節的四個 agent 職能目前以「同一個 session 的不同階段」實作，不是獨立 subagent。改成 subagent 編排時要在上表新增一列。
-- 上表各列**並存**，不是替換：第 1、3、4 列是組員 A 的環境，第 2 列是組員 B 的環境。兩人的工具版本、模型與設定不同，使用紀錄裡由誰的環境產出，看「任務」欄的說明。
+- `WORKFLOW.md` §3 的四個 agent 職能：Analyst／Planner／Implementer 仍是同一個 session 的不同階段；**Verifier（審查 agent 與 S3）自 feature 001 起由組員 A 改為獨立 subagent**，見上表第 6 列。
+- 上表各列**並存**，不是替換：第 1、3、4、6 列是組員 A 的環境，第 2、5 列是組員 B 的環境。兩人的工具版本、模型與設定不同，使用紀錄裡由誰的環境產出，看「任務」欄的說明。
 
 ---
 
@@ -59,10 +60,13 @@ commit 這份文件時用 scope `ai-log`。
 | 24 | 2026-11-10 | workflow v2.1（組員 B 環境） | 請 AI 依組內決定起草 §7 的 ai-log 例外條款、§11 修訂列與 README（PR #8） | 接受 | | AI 起草例外條款並提出「是否另設對方核對」的補償措施選項，組員 B 選擇各自核對；AI 自行修正同一段兩個「§3」指涉不同的歧義 | 0.5h |
 | 25 | 2026-11-10 | PR #9 審查（組員 B 環境） | 請 AI 分析取消 Reviewer 角色的影響，並起草 approve 意見 | 部分接受 | | AI 依 PR #3–#5 的資料建議只保留 Gate A 交叉審查的折衷方案，組內因耗時（流程接近 Waterfall）未採用；approve 草稿未修改即送出 | 0.3h |
 | 26 | 2026-11-10 | PR #11 審查（組員 B 環境） | 請 AI 核對補回 GUT 規則是否正確，並起草 approve 意見 | 接受 | | AI 確認 v2.0 之後的 §8 沒有 GUT 規定、原引用為空，並指出這個空引用從 PR #3 就存在，AI 自己在 PR #5 的分析中也沿用了它 | 0.2h |
+| 27 | 2026-11-10 | feature 001 立項與 spec（組員 A 環境） | 請 AI 起草雛型骨架的 spec、plan、tasks，數值留給人填 | 修正後接受 | `INV` | 開放問題 Q1–Q6 由組員 A 答（一天 5 分鐘、3 人、0.5×–4× 等）；AI 提的 I1–I5（閒晃、變速、資訊面板、除錯按鈕、目錄）組員 A 全部納入。API 對本機 Godot 4.7.2 的 API dump 核對 | 待填 |
+| 28 | 2026-11-10 | GUT 靜默通過修正（組員 A 環境） | 做 T1 時 AI 發現測試檔語法錯誤 GUT 仍回 exit 0，請 AI 修（PR #13） | 修正後接受 | | AI 第一版 hook 掃整個 `test/`，審查 agent 指出會誤判 `-gselect` 篩選過的 run；改版後 9 種情況實測。審查 agent 另建議「只判斷 `null`」，AI 實測後否決（壞腳本 `load()` 不回 null）。AI 起初以「測試工具」為由沒送審，事後補跑 | 待填 |
+| 29 | 2026-11-10 | feature 001 實作 T1–T9 與 S3（組員 A 環境） | 請 AI 逐 task 以 TDD 實作，每個 task 交新 subagent 審查後再核准（PR #14） | 修正後接受 | `INV` `API` | 審查 agent 每個 task 都有發現：第 30 天長度為 0（組員 A 改 spec 為走完才結束）、名字用完的處理是 AI 自決（成為 I6）等；兩條被判誤判，記在 run 檔。`API`：AI 寫 `DayClock.new() is Node`，4.7 在 parse 時就擋下。組員 A 看截圖後改為橢圓大廳、以地板面積定大小。流程事故 6 條（含 Gate A 重簽前就改碼）記在 `docs/agent-runs/001-base-skeleton.md` | 待填 |
 
 **結果**：`接受` ／ `修正後接受` ／ `部分接受` ／ `拒絕`
 
-**標記**：`API`（AI 產出過時或不存在的引擎 API）／ `INV`（AI-invented requirement）／ `DUP`（只是在重現參考遊戲的設計）。本批紀錄都在流程文件階段，還沒碰到引擎 API 與遊戲需求，所以三個標記都空白。
+**標記**：`API`（AI 產出過時或不存在的引擎 API）／ `INV`（AI-invented requirement）／ `DUP`（只是在重現參考遊戲的設計）。#1–#26 都在流程文件階段，還沒碰到引擎 API 與遊戲需求，三個標記都空白；從 #27（feature 001）開始才有。
 
 ---
 
@@ -72,13 +76,13 @@ commit 這份文件時用 scope `ai-log`。
 
 | 項目 | 數 |
 | --- | --- |
-| 紀錄筆數 | 26 |
-| 接受 ／ 修正後接受 ／ 部分接受 ／ 拒絕 | 13 ／ 9 ／ 4 ／ 0 |
-| `API` 筆數 | 0 |
-| `INV` 筆數（含 `DUP`） | 0 |
-| 累計工時 | ≥ 4.6h（#1–#3、#6–#12、#17–#19、#22–#23 待組員 A 補） |
+| 紀錄筆數 | 29 |
+| 接受 ／ 修正後接受 ／ 部分接受 ／ 拒絕 | 13 ／ 12 ／ 4 ／ 0 |
+| `API` 筆數 | 1（#29） |
+| `INV` 筆數（含 `DUP`） | 2（#27、#29；共 6 項，feature 001 的 I1–I6，全部納入） |
+| 累計工時 | ≥ 4.6h（#1–#3、#6–#12、#17–#19、#22–#23、#27–#29 待組員 A 補） |
 
-統計區間：2026-11-09 起（repo 初始化至 PR #11 merge）。
+統計區間：2026-11-09 起（repo 初始化至 PR #14 merge）。
 
 ---
 

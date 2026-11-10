@@ -1,7 +1,7 @@
 ---
 feature: 001-base-skeleton
 owner: 組員 A
-status: approved       # draft | approved | done
+status: done           # draft | approved | done
 vision-refs: ["3.1", "3.2", "4.1", "6"]
 ---
 
@@ -130,7 +130,7 @@ Owner：組員 A　日期：2026-11-10　結果：核准（第 6 次，重簽 ch
 
 ## Gate B — merge 前
 
-檢查表在 PR 模板，這裡只記結果。PR：#__　Owner 自審日期：____　退回次數：__
+檢查表在 PR 模板，這裡只記結果。PR：#14　Owner 自審日期：2026-11-11　退回次數：0
 
 ## 驗收結果
 

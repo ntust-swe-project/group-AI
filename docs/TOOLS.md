@@ -18,6 +18,7 @@ repo 裡附帶的 Claude Code 工具，pull 下來就能用。**它們是工具�
 
 - **Godot 4.7.2**：命令列叫得到 `godot`。Windows 用 `_console.exe` 那個執行檔，才看得到輸出。
 - **clone 後先 import 一次**，否則 `GutTest` 等 class 找不到：`godot --headless --path . --import`
+- **用編輯器開過專案，commit 前先看 `project.godot`**：Godot 編輯器存檔時會刪掉檔頭註解與「值等於預設」的設定，三組共用的欄位（stretch aspect、renderer、Windows 驅動）就這樣被拿掉過。這次沒打算改它，就 `git checkout -- project.godot` 還原。headless 跑測試不會改它
 - **Python 3**：模板部分腳本要用。只用 agent 與 `/gut` 的話不需要。
 
 ## 3. 跑測試
