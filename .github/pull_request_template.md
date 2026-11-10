@@ -12,14 +12,14 @@
 
 <!-- 測試輸出只貼摘要行，失敗才貼那一段 -->
 
-## Reviewer 看這四條
+## Owner 自審這四條
 
 - [ ] diff 只動 tasks 範圍內的東西
 - [ ] 驗收條件逐條過
 - [ ] commit 數 = 核准次數
 - [ ] ai-log 已更新
 
-<!-- Gate B 要按 Approve，不是只留言。merge 用 merge commit，不要 squash -->
+<!-- Gate B：四條勾完、在 PR 留言寫一到三句「看了什麼、注意到什麼」，再 merge。merge 用 merge commit，不要 squash -->
 
 ## 待辦／例外
 

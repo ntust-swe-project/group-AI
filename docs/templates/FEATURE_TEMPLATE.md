@@ -1,7 +1,6 @@
 ---
 feature: NNN-<slug>
 owner: <組員>
-reviewer: <另一位組員>
 status: draft          # draft | approved | done
 vision-refs: []        # 支撐 VISION.md 的哪幾節，例如 ["3.1", "4.3"]
 ---
@@ -85,9 +84,9 @@ Gate A 前不得殘留 `unverified`。
 
 ## Gate A — 實作前核准
 
-Reviewer：____　日期：____　結果：核准 ／ 退回（退回到 S1 ／ 重寫 spec）
+Owner：____　日期：____　結果：核准 ／ 退回（退回到 S1 ／ 重寫 spec）
 
-- [ ] Reviewer 讀過 feature 檔全文（不是摘要）
+- [ ] Owner 讀過 feature 檔全文（不是摘要）
 - [ ] 每條需求追得到來源；追不到的已標 `INV` 並決定去留
 - [ ] 驗收條件照著操作就能判斷過或不過
 - [ ] 「不做什麼」有寫
@@ -101,7 +100,7 @@ Reviewer：____　日期：____　結果：核准 ／ 退回（退回到 S1 ／ 
 
 檢查表在 PR 模板。這裡只記結果。
 
-PR：#__　Reviewer：____　Approve 日期：____　退回次數：__
+PR：#__　Owner 自審日期：____　退回次數：__
 
 ## 驗收結果
 

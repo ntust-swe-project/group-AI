@@ -1,10 +1,10 @@
 # AI-Agent 組 開發流程（Spec-Driven Development）
 
-**v2.1 · 2026-11-10** — 可滾動修改，見 §11
+**v3.0 · 2026-11-10** — 可滾動修改，見 §11
 
 ## 1. 這份文件
 
-`VISION.md` §10 把 workflow 留給各組自訂。本組的做法一句話：**spec 經人類核准後 agent 才動工，進 `main` 前再經一次人類 review。**
+`VISION.md` §10 把 workflow 留給各組自訂。本組的做法一句話：**spec 經 Owner 核准後 agent 才動工，進 `main` 前 Owner 再自審一次。**
 
 本文件規範本組怎麼工作，不規範做什麼遊戲（那在 `VISION.md` 與各 feature 的 spec）。與 `VISION.md` 衝突時以 `VISION.md` 為準。
 
@@ -23,14 +23,13 @@
 
 ### 人類（2 人）
 
-每個 feature 指定 Owner 與 Reviewer，下個 feature 互換，寫在 feature 檔的 frontmatter。
+每個 feature 指定一位 Owner，寫在 feature 檔的 frontmatter。不設 Reviewer。
 
 | 角色 | 做什麼 |
 | --- | --- |
-| Owner | 立項、寫 spec 與 plan、驅動 agent、核准 diff、開 PR、當天填 ai-log |
-| Reviewer | 簽 Gate A、做 Gate B 的 PR review（**按 Approve，不是只留言**）、merge |
+| Owner | 立項、寫 spec 與 plan、驅動 agent、核准 diff、簽 Gate A、開 PR、自審 Gate B 後 merge、當天填 ai-log |
 
-**不可自審**：自己當 Owner 的 PR 不自己 approve 或 merge。
+**自審不是免審**：兩道關卡照檢查表逐條勾，照樣寫「看了什麼、注意到什麼」。另一位組員可以留言，但不擋 merge。
 
 ### Agent（四職能，可以是同一個 session 的不同階段）
 
@@ -79,11 +78,11 @@ docs/
 | --- | --- | --- |
 | S0 立項 | Owner | 建 feature 檔、開 branch `spec/NNN-<slug>` |
 | S1 spec + plan | Analyst／Planner，Owner 改 | feature 檔的 spec／plan／tasks 三段 |
-| **Gate A** | Reviewer | 核准才能動工 |
+| **Gate A** | Owner | 核准才能動工 |
 | S2 實作 | Implementer → Verifier | 逐 task：實作 → **有程式碼就先由 Verifier 新 session 審 diff** → 展示 diff（＋審查結論）→ Owner 核准 → agent commit → push |
 | S3 驗證 | Verifier（新 session） | 逐條驗收結果 + 測試摘要 |
 | S4 PR | Owner | 依 PR 模板開 PR，貼上 S3 的驗收結果 |
-| **Gate B** | Reviewer | Approve 後 merge |
+| **Gate B** | Owner | 自審後 merge |
 | S5 收尾 | Owner | 填 ai-log、補 run 檔、feature 檔 `status: done`、刪 branch |
 
 S2 做不下去（plan 有錯、spec 有漏）時**停下來回報**，不要自己改 spec 或 plan 繞過去。
@@ -92,8 +91,8 @@ S2 做不下去（plan 有錯、spec 有漏）時**停下來回報**，不要自
 
 | 關卡 | 誰簽 | 簽在哪 | 檢查表在哪 |
 | --- | --- | --- | --- |
-| **Gate A**（實作前） | Reviewer | feature 檔的 Gate A 段，commit 進去 | feature 範本裡，7 條 |
-| **Gate B**（merge 前） | Reviewer | GitHub PR 的 **Approve** | PR 模板裡，4 條 |
+| **Gate A**（實作前） | Owner | feature 檔的 Gate A 段，commit 進去 | feature 範本裡，7 條 |
+| **Gate B**（merge 前） | Owner | PR 內文的檢查表打勾 ＋ PR 留言一到三句，然後 merge（GitHub 不讓人 approve 自己的 PR） | PR 模板裡，4 條 |
 
 檢查表只住那兩處，本文件不複製 —— 複製就會漂移。
 
@@ -145,11 +144,7 @@ feature 幾乎都含程式碼，所以 S3 實際上一律要審；免審的是�
 - **一次核准 = 一個 commit**
 - **merge 用 merge commit，不要 squash** —— squash 會把「一次核准＝一個 commit」壓掉，那是 Gate B 第 3 條的依據
 - 不 force push、不 rebase 已 push 的 branch。整理過的歷史不是證據。
-- `main` 無法設 branch protection（免費方案的私有 repo，見 §11 的 v1.1），靠人工把關。自我稽核用：
-
-```bash
-gh pr list --state merged --json number,title,reviewDecision
-```
+- `main` 無法設 branch protection（免費方案的私有 repo，見 §11 的 v1.1），靠人工把關：`main` 一律走 PR，Owner 自審後 merge。
 - **例外：自己的 ai-log 可以直接 push 到 `main`**，不開 PR。條件：
   - 只動 `docs/ai-log/AI_LOG.md`，而且只新增或修改**自己的**紀錄列、自己的工具揭露列，以及 ai-log 的 §3 統計
   - 由**人類** commit 並 push；agent 仍不得 push 到 `main`（§3）
@@ -157,10 +152,10 @@ gh pr list --state merged --json number,title,reviewDecision
   - 各自核對自己的紀錄，不另設對方核對
   - 修改**對方**的紀錄列或其他檔案，照常開 PR
 
-  直接 push 的紀錄用這個命令查（沿 `main` 的第一個 parent 走、排除 merge commit，剩下的就是直接 push 的）：
+- 自我稽核：下面這個命令沿 `main` 的第一個 parent 走、排除 merge commit，剩下的就是直接 push 的。除了 `docs/ai-log/` 以外出現任何東西，就是沒走 PR：
 
   ```bash
-  git log --first-parent --no-merges main -- docs/ai-log/
+  git log --first-parent --no-merges --stat main
   ```
 
 **本組的 code scope 補充**（`COMMIT_CONVENTION.md` 要求各組自訂並記在自己 repo）：
@@ -196,13 +191,12 @@ gh pr list --state merged --json number,title,reviewDecision
 ## 10. 例外
 
 1. **改已核准的 feature 檔**：changelog 加一列（改什麼、為什麼）→ `status` 回 `draft` → 重跑 Gate A。已 merge 的碼不追溯重寫，除非動到驗收條件。
-2. **一人不在**：關卡可延後，不可跳過，不可自審。破例要在 feature 檔寫明原因。
-3. **agent 跑飛**：branch 廢棄不 merge，run 檔記原因。這是報告素材，不是丟臉的事。
-4. **spike**：branch `spike/<slug>`，不寫 spec、不得 merge。學到的寫回 spec 再重走流程。
+2. **agent 跑飛**：branch 廢棄不 merge，run 檔記原因。這是報告素材，不是丟臉的事。
+3. **spike**：branch `spike/<slug>`，不寫 spec、不得 merge。學到的寫回 spec 再重走流程。
 
 ## 11. 修訂
 
-本文件**兩人同意即可改**（`VISION.md` 要三組同意）。改法：開 PR（branch `docs/workflow-vN`）→ 另一人 approve → commit 用 `docs(repo)` → 下表加一列**寫為什麼**。改了不追溯已完成的 feature。措辭小修 `+0.1`，結構變動 `+1.0`。
+本文件**兩人同意即可改**（`VISION.md` 要三組同意）。這是唯一仍要另一人 approve 的 PR —— 流程是兩人共用的規則。改法：開 PR（branch `docs/workflow-vN`）→ 另一人 approve → commit 用 `docs(repo)` → 下表加一列**寫為什麼**。改了不追溯已完成的 feature。措辭小修 `+0.1`，結構變動 `+1.0`。
 
 | 版本 | 日期 | 改了什麼 | 為什麼 |
 | --- | --- | --- | --- |
@@ -210,3 +204,4 @@ gh pr list --state merged --json number,title,reviewDecision
 | v1.1 | 2026-11-09 | 記錄 §6 的例外：`main` 無法設 branch protection，改由人工把關 | 免費方案的私有 repo 不支援 ruleset（API 回 403）。PR #1 就在沒有 approve 的情況下被 merge |
 | v2.0 | 2026-11-10 | 關卡 3 道→2 道；五個檔併成兩個；檢查表改為單一來源；加文件預算、PR 模板、merge 不 squash、自我稽核命令、diff 核准深度分級、審查 agent | 量測結果：`docs/` 已累積 25,226 字，GDScript 與 spec 各 0 份。原因有三 —— 同一事實被記 4–6 次、固定成本與 feature 大小無關、雜務也開 run 檔。作業要求的四項紀錄一條沒少，砍掉的是重複與儀式。另外人類逐行讀 diff 在文件變更上成本不成比例，改為按變更類型分級，並要求**人類 review 前先由新 session 的審查 agent 審一遍**（把成本從人移到機器，Verifier 的獨立性因此成為硬規則而非建議；組內定為只有程式碼要過審，純文件免審；spec 另案 —— 它由 Analyst agent 起草，改為人類讀全文）——這是**改規則，不是改紀錄**，`000-workflow-v1/gates.md` 的事故列保持原樣。版本號依本節「結構變動 +1.0」定為 v2.0 —— 草稿原標 v1.2，由 PR #3 的 Reviewer 指出不符本節規則 |
 | v2.1 | 2026-11-10 | §7 新增例外：自己的 ai-log 可以直接 push 到 `main`，不開 PR；附直接 push 的稽核命令 | 組內同意。PR #6、#7 都只動 ai-log，每次都要開 PR、等對方 approve，成本與內容不成比例。代價是 ai-log 失去對方核對，而 ai-log #12 的結論是 AI 自述要由人核對；組內決定由各自核對自己的紀錄，不另設對方核對 |
+| v3.0 | 2026-11-10 | 取消 Reviewer 角色：Gate A、Gate B 都由 Owner 自己簽，PR 自審後自己 merge；刪 §10 的「一人不在」；§7 的稽核命令改為查所有直接 push | 組內同意。S2 每個 diff 已由 Owner 核准、含程式碼的還有新 session 的審查 agent，另一人再審一次主要是在等人。代價：spec 與 PR 都只剩一個人讀過，「人與 AI 都誤解 spec」這類錯沒有第二雙眼睛，而審查 agent 和 Implementer 同模型、抓不到（§6）。舊稽核命令查 `reviewDecision`，自審後一律為空，已無意義 |
