@@ -62,7 +62,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	assign_menu.close()
 	var colonist := colonist_at(map_point)
 	if colonist:
-		hud.show_colonist(colonist)
+		hud.show_colonist(colonist, wanderers[colonist.id].tasks)
 	else:
 		hud.hide_info()
 	get_viewport().set_input_as_handled()
