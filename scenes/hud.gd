@@ -26,6 +26,16 @@ func refresh() -> void:
 	%PauseButton.text = "繼續" if clock.paused else "暫停"
 
 
+## Info panel (feature 001, R9): only the name for now; needs come later.
+func show_colonist(colonist: Colonist) -> void:
+	%InfoName.text = colonist.name
+	%InfoPanel.visible = true
+
+
+func hide_info() -> void:
+	%InfoPanel.visible = false
+
+
 func _on_pause_pressed() -> void:
 	clock.paused = not clock.paused
 	refresh()
