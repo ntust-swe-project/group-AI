@@ -30,6 +30,31 @@ func _draw() -> void:
 	for x in grid.size.x:
 		for y in grid.size.y:
 			var cell := Vector2i(x, y)
-			var rect := Rect2(Vector2(cell) * CELL_SIZE, Vector2(CELL_SIZE, CELL_SIZE))
-			draw_rect(rect, WALL_COLOR if grid.is_wall(cell) else FLOOR_COLOR)
-			draw_rect(rect, LINE_COLOR, false, 1.0)
+			match grid.kind_of(cell):
+				StationGrid.Cell.FLOOR:
+					draw_rect(_cell_rect(cell), FLOOR_COLOR)
+				StationGrid.Cell.WALL:
+					draw_rect(_cell_rect(cell), WALL_COLOR)
+	_draw_grid_lines()
+
+
+## Each cell edge is drawn once. Width -1 draws a thin line that stays one
+## screen pixel wide however the window is scaled, so lines look even (A7).
+func _draw_grid_lines() -> void:
+	for x in grid.size.x + 1:
+		for y in grid.size.y + 1:
+			var corner := Vector2(x, y) * CELL_SIZE
+			# Left edge of cell (x, y): between (x - 1, y) and (x, y).
+			if _is_drawn(Vector2i(x - 1, y)) or _is_drawn(Vector2i(x, y)):
+				draw_line(corner, corner + Vector2(0, CELL_SIZE), LINE_COLOR, -1.0)
+			# Top edge of cell (x, y): between (x, y - 1) and (x, y).
+			if _is_drawn(Vector2i(x, y - 1)) or _is_drawn(Vector2i(x, y)):
+				draw_line(corner, corner + Vector2(CELL_SIZE, 0), LINE_COLOR, -1.0)
+
+
+func _is_drawn(cell: Vector2i) -> bool:
+	return grid.kind_of(cell) != StationGrid.Cell.SPACE
+
+
+func _cell_rect(cell: Vector2i) -> Rect2:
+	return Rect2(Vector2(cell) * CELL_SIZE, Vector2(CELL_SIZE, CELL_SIZE))

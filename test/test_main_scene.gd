@@ -13,8 +13,8 @@ func before_each():
 
 func test_builds_the_default_hall():
 	assert_eq(main.grid.size, StationGrid.DEFAULT_HALL_SIZE)
-	assert_true(main.grid.is_wall(Vector2i(0, 0)))
-	assert_false(main.grid.is_wall(Vector2i(1, 1)))
+	assert_eq(main.grid.kind_of(Vector2i(0, 0)), StationGrid.Cell.SPACE)
+	assert_true(main.grid.is_floor(StationGrid.DEFAULT_HALL_SIZE / 2))
 
 
 func test_map_draws_the_same_grid():
