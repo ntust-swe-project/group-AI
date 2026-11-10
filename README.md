@@ -31,7 +31,7 @@
 - 交付物為 **prototype 與相關文件**；prototype 完成即視為本組完成。
 - 完成前不讀取其他組的 repo。
 - 引擎與 AI 工具的版本見 `project-common` 的 `docs/VISION.md` 第 10 節，三組必須一致。
-- 開工前先讀 `docs/WORKFLOW.md`，**一次就夠**。重點：**agent 未經人類 review 不得 commit 或 push**，`main` 一律走 PR（例外：自己的 ai-log，見 `WORKFLOW.md` §7），spec 與 plan 經 Gate A 核准 agent 才能動工。
+- 開工前先讀 `docs/WORKFLOW.md`，**一次就夠**。重點：**agent 未經人類 review 不得 commit 或 push**，`main` 一律走 PR、由 Owner 自審後 merge（例外：自己的 ai-log，見 `WORKFLOW.md` §7），spec 與 plan 經 Gate A 核准 agent 才能動工。
 
 ## 開始前
 
