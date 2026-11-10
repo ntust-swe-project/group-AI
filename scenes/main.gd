@@ -14,10 +14,13 @@ var _views := {}  # colonist id -> colonist view node
 var _rng := RandomNumberGenerator.new()
 
 @onready var station_map: Node2D = $StationMap
+@onready var hud: CanvasLayer = $Hud
 
 
 func _ready() -> void:
 	station_map.grid = grid
+	hud.clock = clock
+	hud.refresh()
 	station_map.position = ((get_viewport_rect().size - station_map.pixel_size()) / 2.0).round()
 	for colonist in colony.colonists:
 		_show_colonist(colonist)

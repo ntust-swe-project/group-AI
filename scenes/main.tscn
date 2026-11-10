@@ -2,9 +2,12 @@
 
 [ext_resource type="Script" path="res://scenes/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://scenes/station_map.gd" id="2_map"]
+[ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="3_hud"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
 
 [node name="StationMap" type="Node2D" parent="."]
 script = ExtResource("2_map")
+
+[node name="Hud" parent="." instance=ExtResource("3_hud")]

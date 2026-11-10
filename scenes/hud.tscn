@@ -1,0 +1,49 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/hud.gd" id="1_hud"]
+
+[node name="Hud" type="CanvasLayer"]
+script = ExtResource("1_hud")
+
+[node name="TimeBar" type="HBoxContainer" parent="."]
+offset_left = 24.0
+offset_top = 16.0
+offset_right = 524.0
+offset_bottom = 56.0
+theme_override_constants/separation = 12
+
+[node name="DayLabel" type="Label" parent="TimeBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "第 1 天 / 30"
+
+[node name="PauseButton" type="Button" parent="TimeBar"]
+unique_name_in_owner = true
+focus_mode = 0
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "暫停"
+
+[node name="SlowerButton" type="Button" parent="TimeBar"]
+unique_name_in_owner = true
+focus_mode = 0
+custom_minimum_size = Vector2(48, 0)
+layout_mode = 2
+text = "−"
+
+[node name="SpeedLabel" type="Label" parent="TimeBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(56, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "1.0×"
+horizontal_alignment = 1
+
+[node name="FasterButton" type="Button" parent="TimeBar"]
+unique_name_in_owner = true
+focus_mode = 0
+custom_minimum_size = Vector2(48, 0)
+layout_mode = 2
+text = "+"
