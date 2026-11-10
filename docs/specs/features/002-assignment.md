@@ -19,12 +19,12 @@ vision-refs: ["3.2"]
 
 | # | 需求 | 來源 |
 | --- | --- | --- |
-| R1 | 右鍵點地板打開指派選單；選殖民者與優先度後執行，建立一個指派（工作點） | `VISION.md` §3.2；`SYSTEM.md` `Assignment`；Q1、Q7 |
+| R1 | 右鍵點地板打開**動作選單**；選其中的「指派工作」打開子選單，選殖民者與優先度後執行，建立一個指派（工作點）。動作選單之後可再加其他項目 | `VISION.md` §3.2；`SYSTEM.md` `Assignment`；Q1、Q7 |
 | R2 | 優先度 1–5，數字越大越急；閒晃視為 0 | `SYSTEM.md` `Priority`；Q2 |
 | R3 | 每個殖民者有自己的待辦佇列：依優先度由高到低，同級先來先做 | Q3 |
 | R4 | 新指派比殖民者手上的事更急時，**當下**搶占並開始前往，不排到下一個 tick；被搶占的事放回佇列 | `SYSTEM.md` SC4；訪談 Q5 與補充；I3 |
 | R5 | 走到工作點、再待 2 秒（遊戲時間）指派完成並消失，接著做佇列的下一件，佇列空就閒晃 | Q5；I1、I6 |
-| R6 | 牆、站外、走不到的格子按右鍵，選單不打開；指給走不到的人也不建立 | Q4 |
+| R6 | 牆、站外、走不到的格子按右鍵，動作選單不打開（目前只有「指派工作」一項）；子選單只列走得到的人，指給走不到的人也不建立 | Q4 |
 | R7 | 可以取消指派；取消手上的事時，當下改做佇列的下一件 | Q6；I4 |
 | R8 | 點殖民者時，資訊面板列出他手上的事與佇列（優先度、格子） | 訪談 Q5（看得到有在動）；I5 |
 | R9 | 指派、佇列、搶占都是純邏輯，不繼承 `Node` | `SYSTEM.md` S1 |
@@ -39,9 +39,9 @@ vision-refs: ["3.2"]
 | A4 | 走到工作點、待滿 2 秒遊戲時間才完成；暫停時不計時；佇列空時回去閒晃 | R5 | GUT |
 | A5 | 被搶占的事回到佇列，之後照優先度繼續 | R4 | GUT |
 | A6 | 取消手上的事 → 當下開始下一件；取消佇列裡的 → 只把它移除 | R7 | GUT |
-| A7 | 對牆、站外按右鍵，選單不打開；指給走不到的人，指派不建立 | R6 | GUT |
+| A7 | 對牆、站外按右鍵，動作選單不打開；選「指派工作」才開出子選單；指給走不到的人，指派不建立 | R1、R6 | GUT |
 | A8 | 指派相關的邏輯 class 都不是 `Node` | R9 | GUT |
-| A9 | 執行遊戲：右鍵地板開出選單，可選殖民者與 1–5；執行後殖民者立刻轉向，兩秒內肉眼看得到在移動（SC4 的最差上限） | R1、R4 | 手動 |
+| A9 | 執行遊戲：右鍵地板開出動作選單，選「指派工作」開出子選單，可選殖民者與 1–5；執行後殖民者立刻轉向，兩秒內肉眼看得到在移動（SC4 的最差上限） | R1、R4 | 手動 |
 | A10 | 執行遊戲：點殖民者，面板列出手上的事與佇列；在選單取消後，面板與殖民者行為隨之改變 | R7、R8 | 手動 |
 
 ### 不做什麼
@@ -88,9 +88,9 @@ vision-refs: ["3.2"]
 | --- | --- | --- |
 | `logic/assignment.gd`、`task_queue.gd`、`assignment_board.gd` | 新增 | 指派、佇列、搶占、取消 |
 | `logic/wanderer.gd` | 修改 | 執行任務、到點計時 |
-| `scenes/assign_menu.tscn`／`.gd` | 新增 | 右鍵選單 |
+| `scenes/assign_menu.tscn`／`.gd`、`scenes/context_menu.tscn`／`.gd` | 新增 | 指派子選單、右鍵動作選單 |
 | `scenes/main.gd`、`scenes/hud.tscn`／`.gd` | 修改 | 右鍵輸入、面板列佇列 |
-| `test/test_task_queue.gd`、`test_assignment_board.gd`、`test_wanderer.gd`、`test_assign_menu.gd`、`test_logic_is_pure.gd` | 新增／修改 | A1–A8 |
+| `test/test_task_queue.gd`、`test_assignment_board.gd`、`test_wanderer.gd`、`test_assign_menu.gd`、`test_logic_is_pure.gd`、`test_info_panel.gd` | 新增／修改 | A1–A8；A9、A10 的接線 |
 
 動到 `project.godot` 共用欄位嗎：否
 
@@ -100,8 +100,8 @@ vision-refs: ["3.2"]
 
 | API | 狀態 | 文件連結 |
 | --- | --- | --- |
-| `OptionButton`：`add_item()`、`clear()`、`select()`、`get_selected_id()`、`item_selected` | 已驗證 | `docs.godotengine.org/en/4.7/classes/class_optionbutton.html` |
-| `Control`：`position`、`size`、`get_rect()`、`mouse_filter`、`focus_mode`；`PanelContainer`、`VBoxContainer`；`Node.queue_free()` | 已驗證 | `.../class_control.html` |
+| `OptionButton`：`add_item()`、`clear()`、`select()`、`get_selected_id()`、`get_item_index()`、`get_item_id()`、`item_count`、`item_selected` | 已驗證 | `docs.godotengine.org/en/4.7/classes/class_optionbutton.html` |
+| `Control`：`position`、`size`、`get_rect()`、`reset_size()`、`size_flags_horizontal`、`mouse_filter`、`focus_mode`；`PanelContainer`、`VBoxContainer`、`HBoxContainer`；`Node` 的 `queue_free()`、`remove_child()`、`get_children()`、`find_children()`；`AStarGrid2D` 沿用 001 已驗證 | 已驗證 | `.../class_control.html` |
 | `MOUSE_BUTTON_RIGHT` | 已驗證 | `.../class_@globalscope.html` |
 
 ### Tasks
@@ -111,10 +111,11 @@ vision-refs: ["3.2"]
 - [ ] **T3** — `AssignmentBoard`：建立（可達性）、取消、id；純度測試 ／ 驗收：A7（後半）、A8
 - [ ] **T4** — 右鍵選單：只在可達地板打開、選人與優先度、列出並取消該格指派 ／ 驗收：A7（前半）、A9
 - [ ] **T5** — 資訊面板列出手上的事與佇列 ／ 驗收：A10
+- [ ] **T6** — 右鍵改開動作選單，「指派工作」開出 T4 的指派面板（子選單） ／ 驗收：A7、A9
 
 ## Gate A — 實作前核准
 
-Owner：組員 A　日期：2026-11-11　結果：核准
+Owner：組員 A　日期：2026-11-11　結果：核准（第 2 次，重簽 changelog 第 2、3 列的 Plan 補充與兩層選單）
 
 - [x] Owner 讀過 feature 檔全文（不是摘要）
 - [x] 每條需求追得到來源；追不到的已標 `INV` 並決定去留
@@ -141,3 +142,5 @@ Owner：組員 A　日期：2026-11-11　結果：核准
 | 日期 | 改了什麼 | 為什麼 |
 | --- | --- | --- |
 | 2026-11-11 | 初版 | 立項 |
+| 2026-11-11 | Plan 補上 `test_info_panel.gd` 與實作中多用到的 API（`reset_size()`、`get_item_index()` 等，皆對 4.7.2 核對） | 實作時用到、Gate A 時沒列；比照 001 changelog 第 4 列 |
+| 2026-11-11 | R1、R6、A7、A9 改為兩層：右鍵開動作選單，「指派工作」是子選單；新增 T6 | 組員 A 審 T1–T5 時提出：右鍵應開一般選單，指派是其中一項，之後可再加功能（呼應 Q7） |
