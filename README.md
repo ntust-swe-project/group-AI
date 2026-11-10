@@ -24,17 +24,21 @@
 | `docs/agent-runs/` | 關鍵指示、決策與被拒絕的建議 |
 | `docs/meeting/` | 會議紀錄、客戶訪談紀錄 |
 | `docs/ai-log/` | AI 使用紀錄（`project-common` 範本） |
+| `docs/TOOLS.md` | repo 附帶的 Claude Code 工具（agent、skill）與 GUT 測試：裝了什麼、怎麼用、哪些不要用 |
 
 ## 規則重點
 
 - **不要**在本 repo 另存 `VISION.md` 副本。起始文件只有 `project-common` 那一份，定案後要改須經三組同意。
 - 交付物為 **prototype 與相關文件**；prototype 完成即視為本組完成。
 - 完成前不讀取其他組的 repo。
-- 引擎與 AI 工具的版本見 `project-common` 的 `docs/VISION.md` 第 10 節，三組必須一致。
+- 引擎版本見 `project-common` 的 `docs/VISION.md` 第 10 節，三組必須一致。AI 工具各組自選、不統一，但須在 ai-log 揭露（同節）；本組用的見 `docs/TOOLS.md`。
 - 開工前先讀 `docs/WORKFLOW.md`，**一次就夠**。重點：**agent 未經人類 review 不得 commit 或 push**，`main` 一律走 PR、由 Owner 自審後 merge（例外：自己的 ai-log，見 `WORKFLOW.md` §7），spec 與 plan 經 Gate A 核准 agent 才能動工。
 
 ## 開始前
 
 ```bash
 git config commit.template .gitmessage
+godot --headless --path . --import   # 第一次 clone 後跑一次，GUT 測試才找得到 class
 ```
+
+工具與測試的用法見 `docs/TOOLS.md`。
