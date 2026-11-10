@@ -46,8 +46,7 @@ vision-refs: ["3.1", "3.2", "4.1", "6"]
 ### 不做什麼
 
 - 生理、心理數值與其顯示（只留面板位置）；工作、指派、優先度、搶占
-- 建造、設施、自動化
-- 危機、失敗判定、結算畫面 —— 第 30 天只是停住
+- 建造、設施、自動化；危機、失敗判定、結算畫面 —— 第 30 天只是停住
 - 鏡頭移動與縮放（地圖放得進 1920×1080）；多房間佈局、名字組合（名＋姓）—— 等實體出來再調整
 - 選單、存檔、音效、任何美術（顏色只用來區分牆、地板、殖民者）；改 `project.godot` 的共用欄位
 
@@ -77,7 +76,7 @@ vision-refs: ["3.1", "3.2", "4.1", "6"]
 
 ### 方案
 
-- **純邏輯**（`extends RefCounted`）：`DayClock` 吃真實秒數 `advance(delta)`，處理天數、暫停、倍速、第 30 天停止。`Colony` 持有殖民者陣列（不假設數量，SC1）。`Colonist` 目前只有 id 與名字，名字從 `colonist_names.gd` 不重複抽取。一天長度、倍速範圍、地圖尺寸、格子大小都是具名常數，方便之後調整。`StationGrid` 包一個 `AStarGrid2D`，牆格設成 solid，回傳格子路徑。
+- **純邏輯**（`extends RefCounted`）：`DayClock` 吃真實秒數 `advance(delta)`，處理天數、暫停、倍速、第 30 天停止。`Colony` 持有殖民者陣列（不假設數量，SC1）。`Colonist` 目前只有 id 與名字，名字從 `colonist_names.gd` 不重複抽取。一天長度、倍速範圍、地圖尺寸、格子大小、走路速度都是具名常數，方便之後調整；後三者是實作時的暫定值（大廳 48×27 格、每格 32 px、每秒 2 格），驗收時再定。`StationGrid` 包一個 `AStarGrid2D`，牆格設成 solid，回傳格子路徑。
 - **畫面**：`main.tscn` 持有上述邏輯物件，每幀呼叫 `advance`。地圖用 `_draw()` 畫格子，殖民者是圓點加名字，沿 `StationGrid` 的路徑移動。HUD 放天數、變速按鈕、資訊面板、除錯按鈕。
 - **建議 Q5 用格子**：`AStarGrid2D` 是 `RefCounted`，找路能留在邏輯層用 GUT 測（A5），之後建造放設施也自然對齊格子。自由移動要靠場景樹裡的 `NavigationRegion2D`，邏輯層測不到。
 
@@ -85,10 +84,10 @@ vision-refs: ["3.1", "3.2", "4.1", "6"]
 
 | 檔案 | 新增／修改 | 做什麼 |
 | --- | --- | --- |
-| `logic/day_clock.gd`、`colony.gd`、`colonist.gd`、`station_grid.gd`、`colonist_names.gd` | 新增 | 純邏輯；名字表是常數陣列 |
+| `logic/day_clock.gd`、`colony.gd`、`colonist.gd`、`station_grid.gd`、`colonist_names.gd`、`wanderer.gd` | 新增 | 純邏輯；名字表是常數陣列；`Wanderer` 管閒晃 |
 | `scenes/main.tscn`／`.gd` | 新增 | 組合邏輯與畫面 |
 | `scenes/station_map.gd`、`colonist_view.tscn`／`.gd`、`hud.tscn`／`.gd` | 新增 | 地圖、殖民者、HUD |
-| `test/test_day_clock.gd`、`test_colony.gd`、`test_station_grid.gd`、`test_logic_is_pure.gd` | 新增 | A1–A6 |
+| `test/test_day_clock.gd`、`test_colony.gd`、`test_station_grid.gd`、`test_logic_is_pure.gd`、`test_wanderer.gd`、`test_main_scene.gd`、`test_hud.gd`、`test_info_panel.gd`、`test_debug_bar.gd` | 新增 | A1–A6；A7–A10 的接線（外觀仍手動驗） |
 | `project.godot` | 修改 | 只加 `run/main_scene`，非共用欄位 |
 
 動到 `project.godot` 共用欄位嗎：否（`run/main_scene` 不屬共用的版本、renderer、解析度、stretch）
@@ -99,9 +98,9 @@ vision-refs: ["3.1", "3.2", "4.1", "6"]
 
 | API | 狀態 | 文件連結 |
 | --- | --- | --- |
-| `AStarGrid2D`：`region`、`cell_size`、`diagonal_mode`、`update()`、`set_point_solid()`、`get_id_path()`、`is_in_boundsv()`；繼承 `RefCounted` | 已驗證 | `docs.godotengine.org/en/4.7/classes/class_astargrid2d.html` |
+| `AStarGrid2D`：`region`、`cell_size`、`diagonal_mode`、`update()`、`set_point_solid()`、`get_id_path()`、`is_in_boundsv()`、`is_point_solid()`；繼承 `RefCounted` | 已驗證 | `docs.godotengine.org/en/4.7/classes/class_astargrid2d.html` |
 | `CanvasItem`：`_draw()`、`draw_rect()`、`draw_circle()`、`queue_redraw()`、`get_global_mouse_position()` | 已驗證 | `.../class_canvasitem.html` |
-| `Node._process()`、`Node._unhandled_input()`、`InputEventMouseButton.button_index` | 已驗證 | `.../class_node.html` |
+| `Node._process()`、`Node._unhandled_input()`、`InputEventMouseButton` 的 `button_index`／`pressed`／`position`、`Node2D.to_local()`／`to_global()`、`Viewport.set_input_as_handled()` | 已驗證 | `.../class_node.html` |
 | `BaseButton.pressed`、`Label.text`、`Node2D.position`、`RandomNumberGenerator.randi_range()` | 已驗證 | `.../class_basebutton.html` 等 |
 
 ### Tasks
@@ -117,7 +116,7 @@ vision-refs: ["3.1", "3.2", "4.1", "6"]
 
 ## Gate A — 實作前核准
 
-Owner：組員 A　日期：2026-11-10　結果：核准（第 3 次，重簽 changelog 第 3 列的 I6）
+Owner：組員 A　日期：2026-11-10　結果：核准（第 4 次，重簽 changelog 第 4 列的 Plan 補充）
 
 - [x] Owner 讀過 feature 檔全文（不是摘要）
 - [x] 每條需求追得到來源；追不到的已標 `INV` 並決定去留
@@ -148,3 +147,4 @@ Owner：組員 A　日期：2026-11-10　結果：核准（第 3 次，重簽 ch
 | 2026-11-10 | 初版 | 立項 |
 | 2026-11-10 | R2、A2：第 30 天要走完才結束。原本一進入第 30 天就結束，第 30 天長度為 0 | T1 審查 agent 指出；`VISION.md` §4.1 是「撐過 30 個遊戲天」，組員 A 選擇走完第 30 天。`status` 回 `draft`，重跑 Gate A |
 | 2026-11-10 | 新增 I6：名字表用完時加數字 | T2 審查 agent 指出這是 AI 自行決定、spec 沒寫的行為；組員 A 選擇納入 |
+| 2026-11-10 | Plan 補上實作中多出的檔案（`wanderer.gd`、5 個測試檔）與 API（`is_point_solid()`、滑鼠點擊相關），並寫明三個暫定值 | 審查 agent 指出 Plan 檔案表與 API 表未涵蓋；暫定值原本只寫在程式註解裡 |
