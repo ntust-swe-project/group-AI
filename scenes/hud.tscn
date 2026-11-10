@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://scenes/hud.gd" id="1_hud"]
 [ext_resource type="PackedScene" path="res://scenes/assign_menu.tscn" id="2_menu"]
+[ext_resource type="PackedScene" path="res://scenes/context_menu.tscn" id="3_context"]
 
 [node name="Hud" type="CanvasLayer"]
 script = ExtResource("1_hud")
@@ -100,4 +101,7 @@ layout_mode = 2
 text = "加殖民者"
 
 [node name="AssignMenu" parent="." instance=ExtResource("2_menu")]
+unique_name_in_owner = true
+
+[node name="ContextMenu" parent="." instance=ExtResource("3_context")]
 unique_name_in_owner = true

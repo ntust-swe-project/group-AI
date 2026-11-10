@@ -1,6 +1,6 @@
 extends GutTest
 
-# T4 — right-click assignment menu (A7 first half, A9 wiring).
+# T4 — assignment menu (A7 first half, A9 wiring); reached through the context menu since T6.
 
 const MainScene := preload("res://scenes/main.tscn")
 
@@ -20,6 +20,10 @@ func _click_cell(cell: Vector2i, button := MOUSE_BUTTON_RIGHT) -> void:
 	event.pressed = true
 	event.position = main.station_map.to_global(main.station_map.cell_to_pixel(Vector2(cell)))
 	main._unhandled_input(event)
+	# Right-click opens the context menu; the assignment menu is its submenu (T6).
+	var context: Control = main.get_node("Hud").get_node("%ContextMenu")
+	if button == MOUSE_BUTTON_RIGHT and context.visible:
+		context.get_node("%AssignButton").pressed.emit()
 
 
 func _centre() -> Vector2i:

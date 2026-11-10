@@ -18,12 +18,14 @@ var _rng := RandomNumberGenerator.new()
 @onready var station_map: Node2D = $StationMap
 @onready var hud: CanvasLayer = $Hud
 @onready var assign_menu: Control = $Hud/%AssignMenu
+@onready var context_menu: Control = $Hud/%ContextMenu
 
 
 func _ready() -> void:
 	station_map.grid = grid
 	hud.clock = clock
 	hud.add_colonist_requested.connect(_on_add_colonist_requested)
+	context_menu.assign_chosen.connect(_on_assign_chosen)
 	assign_menu.assign_requested.connect(_on_assign_requested)
 	assign_menu.cancel_requested.connect(_on_cancel_requested)
 	hud.refresh()
@@ -44,7 +46,7 @@ func _process(delta: float) -> void:
 
 
 func _on_add_colonist_requested() -> void:
-	assign_menu.close()  # its colonist list would be out of date
+	_close_menus()  # the assignment menu's colonist list would be out of date
 	_show_colonist(colony.add_colonist())
 
 
@@ -54,12 +56,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	var map_point := station_map.to_local(click.position)
 	if click.button_index == MOUSE_BUTTON_RIGHT:
-		_open_assign_menu(_cell_at(map_point), click.position)
+		_open_context_menu(_cell_at(map_point), click.position)
 		get_viewport().set_input_as_handled()
 		return
 	if click.button_index != MOUSE_BUTTON_LEFT:
 		return
-	assign_menu.close()
+	_close_menus()
 	var colonist := colonist_at(map_point)
 	if colonist:
 		hud.show_colonist(colonist, wanderers[colonist.id].tasks)
@@ -104,6 +106,23 @@ func _free_floor_cell() -> Vector2i:
 
 
 # --- feature 002: assignments ---
+
+## Right-click: the context menu opens where at least one of its actions
+## applies. Its only action, 指派工作, needs floor someone can reach (R6).
+func _open_context_menu(cell: Vector2i, screen_position: Vector2) -> void:
+	_close_menus()
+	if board.can_assign_at(cell):
+		context_menu.open(cell, screen_position)
+
+
+func _close_menus() -> void:
+	context_menu.close()
+	assign_menu.close()
+
+
+func _on_assign_chosen() -> void:
+	_open_assign_menu(context_menu.cell, context_menu.opened_at)
+
 
 func _open_assign_menu(cell: Vector2i, screen_position: Vector2) -> void:
 	if not board.can_assign_at(cell):

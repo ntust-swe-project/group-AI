@@ -1,7 +1,7 @@
 extends PanelContainer
 
-## Right-click menu on a floor cell (feature 002, R1, R7, I4): pick who and how
-## urgent, or cancel what is already assigned there. It only reports choices;
+## Assignment submenu, opened from the context menu's 指派工作 (feature 002,
+## R1, R7, I4): pick who and how urgent, or cancel what is already assigned there. It only reports choices;
 ## main.gd talks to the AssignmentBoard.
 
 signal assign_requested(colonist_id: int, priority: int)

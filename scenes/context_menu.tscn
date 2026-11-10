@@ -1,0 +1,18 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/context_menu.gd" id="1_context"]
+
+[node name="ContextMenu" type="PanelContainer"]
+visible = false
+custom_minimum_size = Vector2(140, 0)
+script = ExtResource("1_context")
+
+[node name="Items" type="VBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="AssignButton" type="Button" parent="Items"]
+unique_name_in_owner = true
+focus_mode = 0
+layout_mode = 2
+text = "指派工作"
+alignment = 0
