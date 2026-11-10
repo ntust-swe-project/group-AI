@@ -14,6 +14,7 @@ commit 這份文件時用 scope `ai-log`。
 | --- | --- | --- | --- | --- |
 | 2026-11-09 | Claude Code 2.1.319 | Claude Opus 5 | `superpowers` plugin v7.0.0（官方 plugin cache）：SessionStart hook 注入 skill 指引、本次使用其 `brainstorming` skill。未啟用自訂 hooks、未啟用 subagent 編排 | 無 |
 | 2026-11-09 | Claude Code 2.1.312（Claude 桌面版 Code 分頁） | Claude Opus 5.5 | 無 hooks、無 subagent 編排。output style 設為 Learning（AI 會把部分內容留給人類親自完成，並附解說） | 無 |
+| 2026-11-10 | Claude Code 2.1.322（CLI） | Claude Opus 5.5 | `superpowers` plugin v7.0.0：SessionStart hook 注入 skill 指引，本次使用其 `receiving-code-review` skill。未啟用自訂 hooks、未啟用 subagent 編排 | 無 |
 
 補充說明：
 
@@ -46,6 +47,9 @@ commit 這份文件時用 scope `ai-log`。
 | 14 | 2026-11-10 | PR #3 審查第二輪（組員 B 環境） | 請 AI 分析 `a011990` 的範圍與 ai-log #11 理由欄的錯誤，並依組內結論（AI 審程式碼、人審 spec）起草留言 | 接受 | | AI 指出 `a011990` 超出 request changes 範圍與 #11 三處不符實際，原先「拆成另一個 PR」的建議在與組員 A 討論後改為在 PR #3 內修正，留言草稿未修改即送出 | 0.3h |
 | 15 | 2026-11-10 | PR #3 複查（組員 B 環境） | 請 AI 複查兩輪修正是否到位，並起草 approve 補記 | 接受 | | AI 確認四處修正與連帶改動到位並指出 approve 意見空白，補記中「看了什麼」由 Reviewer 確認屬實後送出 | 0.2h |
 | 16 | 2026-11-10 | PR #4 審查（組員 B 環境） | 請 AI 檢查 PR #4（客戶訪談紀錄 001）並起草重新 approve 的意見 | 部分接受 | | AI 指出「已同步至 project-common」不實（組員 A 另於 `887bd47` 自行修正），但起草時誤以為組員 B 是客戶、經組員 B 更正；最終意見刪去 AI 的觀察與出席欄建議，採用 AI 建議把核對範圍寫成「內容合理，未對照原始問答」 | 0.6h |
+| 17 | 2026-11-10 | 系統層 spec 起草（組員 A 環境） | 請 AI 只以 `VISION.md` 與訪談 001 為輸入，起草 `SYSTEM.md` 的邊界、共用概念、系統層約束與待決項，並把組內決定落地 | 修正後接受 | | 待決項全由人決定（S2 客戶裁決，S3–S5 組內）。AI 的錯由人抓到：S5 原敘述把 Q3 已定的「不預警」誤列為待決。`SC1`–`SC9` 是 AI 從訪談推出的推論，交 Reviewer 逐條確認 | 待填 |
+| 18 | 2026-11-10 | 系統層 spec 更正（組員 A 環境） | 客戶釐清 Q5 的「兩秒」後，請 AI 更正 `SC4` | 修正後接受 | | 錯在 AI 的推論：「兩秒內看得到反應」等於給實作一筆可用掉的延遲預算。客戶（組員 A 兼任）釐清兩秒是判定卡住的上限，改為「當下就開始執行」（`b97875d`） | 待填 |
+| 19 | 2026-11-10 | PR #5 review 修正（組員 A 環境） | 請 AI 讀 Reviewer 的 request changes，依組員 A 的回應修 `SYSTEM.md`、查 `project-common` 有沒有被改過、起草本輪 ai-log | 接受 | | 三點的處理由組員 A 決定：S3 補註類型共通，但不照 Reviewer 建議寫「名稱另取」—— 壓力、體力是通用詞，只避開《缺氧》特有名詞；`SC4`、`SC7` 屬系統層必要機制而保留，S4 的回本公式移交 feature；`project-common` 未被修改。AI 查到本機 `project-common` 自 clone 後無檔案變動、與遠端一致，並指出 PR 內文「agent 改 `project-common`」一句與事實不符 | 待填 |
 
 **結果**：`接受` ／ `修正後接受` ／ `部分接受` ／ `拒絕`
 
@@ -59,13 +63,13 @@ commit 這份文件時用 scope `ai-log`。
 
 | 項目 | 數 |
 | --- | --- |
-| 紀錄筆數 | 16 |
-| 接受 ／ 修正後接受 ／ 部分接受 ／ 拒絕 | 7 ／ 6 ／ 3 ／ 0 |
+| 紀錄筆數 | 19 |
+| 接受 ／ 修正後接受 ／ 部分接受 ／ 拒絕 | 8 ／ 8 ／ 3 ／ 0 |
 | `API` 筆數 | 0 |
 | `INV` 筆數（含 `DUP`） | 0 |
-| 累計工時 | ≥ 2.5h（#1–#3、#6–#12 待組員 A 補） |
+| 累計工時 | ≥ 2.5h（#1–#3、#6–#12、#17–#19 待組員 A 補） |
 
-統計區間：2026-11-09 起（repo 初始化至 PR #4 merge）。
+統計區間：2026-11-09 起（repo 初始化至 PR #5）。
 
 ---
 
