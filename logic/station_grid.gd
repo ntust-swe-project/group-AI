@@ -45,6 +45,15 @@ func is_floor(cell: Vector2i) -> bool:
 	return _astar.is_in_boundsv(cell) and not _astar.is_point_solid(cell)
 
 
+func floor_cells() -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	for x in size.x:
+		for y in size.y:
+			if is_floor(Vector2i(x, y)):
+				cells.append(Vector2i(x, y))
+	return cells
+
+
 ## Cells from `from` to `to`, both included, moving one cell up, down, left or
 ## right per step. Empty when either end is not floor or `to` is unreachable.
 func find_path(from: Vector2i, to: Vector2i) -> Array[Vector2i]:

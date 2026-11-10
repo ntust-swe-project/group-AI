@@ -19,8 +19,9 @@ func pixel_size() -> Vector2:
 	return Vector2(grid.size) * CELL_SIZE if grid else Vector2.ZERO
 
 
-func cell_to_pixel_center(cell: Vector2i) -> Vector2:
-	return (Vector2(cell) + Vector2(0.5, 0.5)) * CELL_SIZE
+## Pixel position of a (possibly fractional) cell's centre, in map coordinates.
+func cell_to_pixel(cell_position: Vector2) -> Vector2:
+	return (cell_position + Vector2(0.5, 0.5)) * CELL_SIZE
 
 
 func _draw() -> void:
