@@ -16,6 +16,7 @@ commit 這份文件時用 scope `ai-log`。
 | 2026-11-09 | Claude Code 2.1.312（Claude 桌面版 Code 分頁） | Claude Opus 5.5 | 無 hooks、無 subagent 編排。output style 設為 Learning（AI 會把部分內容留給人類親自完成，並附解說） | 無 |
 | 2026-11-10 | Claude Code 2.1.322（CLI） | Claude Opus 5.5 | `superpowers` plugin v7.0.0：SessionStart hook 注入 skill 指引，本次使用其 `receiving-code-review` skill。未啟用自訂 hooks、未啟用 subagent 編排 | 無 |
 | 2026-11-10 | Claude Code 2.1.322（CLI） | Claude Opus 5.5 | `superpowers` plugin v7.0.0：SessionStart hook 注入 skill 指引，本次使用其 `brainstorming` skill。**repo 內附** `Donchitos/Claude-Code-Game-Studios` v1.3.0（`abc0de7`）的 agent、skill 與路徑規則（`.claude/rules/`，碰到對應檔案自動載入）；該模板的 18 個 hooks 與狀態列**未啟用**、根目錄 `CLAUDE.md` 未搬。另附 `rockerBOO/gut-skill`（`0259877`，本組改過）。未啟用自訂 hooks、未啟用 subagent 編排；本次用過 `web-fetch` subagent 一次讀網頁 | GUT 9.7.1（Godot 單元測試，非 AI 工具） |
+| 2026-11-10 | Claude Code 2.1.312（Claude 桌面版 Code 分頁） | Claude Opus 5.5 | 無 hooks、無 subagent 編排，output style 為 Learning。自 PR #10 起，repo 內附的模板 skill 在處理 `group-AI/` 底下的檔案時可被載入；本列生效時尚未使用任何一個 | 無 |
 
 補充說明：
 
@@ -55,6 +56,9 @@ commit 這份文件時用 scope `ai-log`。
 | 21 | 2026-11-10 | PR #5 複查（組員 B 環境） | 請 AI 複查組員 A 的三個新 commit，並起草 approve 意見 | 修正後接受 | | AI 指出 ai-log #19「`project-common` 未被修改」的證據時間窗口晚於事件、並承認自己第一輪建議的「名稱另取」不準確；組員 A 在群組說明 agent 曾開始修改後改寫後續段落，組員 B 再把「你」改為「組員 A」以免旁人看不懂 | 0.7h |
 | 22 | 2026-11-10 | workflow v3.0（組員 A 環境） | 請 AI 依組內決定取消 Reviewer 角色，改 `WORKFLOW.md`、PR 模板、feature 範本、README 並開 PR #9 | 接受 | | 範圍由組員 A 決定（Gate A、Gate B 都由 Owner 自簽）。AI 指出 §7 的 `reviewDecision` 稽核命令在自審後一律為空，改成列出所有直接 push 的命令；修改流程本身仍要另一人 approve（§11）是 AI 提議、組員 A 同意保留 | 待填 |
 | 23 | 2026-11-10 | AI 工具導入（組員 A 環境） | 請 AI 評估並導入 Game Studios 模板、GUT 與 GUT skill，寫 `docs/TOOLS.md`（PR #10），並把 v2.0 刪掉的 GUT 規則補回 WORKFLOW（PR #11） | 接受 | | 「模板當工具、不採用其流程」與「hooks 先關」由組員 A 決定，依據是 AI 讀過 hook 腳本後的評估：它們會在每個 session 注入模板流程。AI 建議不採用組員 A 找的 game-art skill（只有美術建議、不產生素材），組員 A 同意。AI 發現 GUT skill 寫於 Godot 4.7 之前、double 回傳值已過時，對 GUT 9.7.1 原始碼核對並實測後修正；README「AI 工具三組一致」與 VISION 矛盾，組員 A 指出是 README 早於 VISION 定案 | 待填 |
+| 24 | 2026-11-10 | workflow v2.1（組員 B 環境） | 請 AI 依組內決定起草 §7 的 ai-log 例外條款、§11 修訂列與 README（PR #8） | 接受 | | AI 起草例外條款並提出「是否另設對方核對」的補償措施選項，組員 B 選擇各自核對；AI 自行修正同一段兩個「§3」指涉不同的歧義 | 0.5h |
+| 25 | 2026-11-10 | PR #9 審查（組員 B 環境） | 請 AI 分析取消 Reviewer 角色的影響，並起草 approve 意見 | 部分接受 | | AI 依 PR #3–#5 的資料建議只保留 Gate A 交叉審查的折衷方案，組內因耗時（流程接近 Waterfall）未採用；approve 草稿未修改即送出 | 0.3h |
+| 26 | 2026-11-10 | PR #11 審查（組員 B 環境） | 請 AI 核對補回 GUT 規則是否正確，並起草 approve 意見 | 接受 | | AI 確認 v2.0 之後的 §8 沒有 GUT 規定、原引用為空，並指出這個空引用從 PR #3 就存在，AI 自己在 PR #5 的分析中也沿用了它 | 0.2h |
 
 **結果**：`接受` ／ `修正後接受` ／ `部分接受` ／ `拒絕`
 
@@ -68,13 +72,13 @@ commit 這份文件時用 scope `ai-log`。
 
 | 項目 | 數 |
 | --- | --- |
-| 紀錄筆數 | 23 |
-| 接受 ／ 修正後接受 ／ 部分接受 ／ 拒絕 | 11 ／ 9 ／ 3 ／ 0 |
+| 紀錄筆數 | 26 |
+| 接受 ／ 修正後接受 ／ 部分接受 ／ 拒絕 | 13 ／ 9 ／ 4 ／ 0 |
 | `API` 筆數 | 0 |
 | `INV` 筆數（含 `DUP`） | 0 |
-| 累計工時 | ≥ 3.6h（#1–#3、#6–#12、#17–#19、#22–#23 待組員 A 補） |
+| 累計工時 | ≥ 4.6h（#1–#3、#6–#12、#17–#19、#22–#23 待組員 A 補） |
 
-統計區間：2026-11-09 起（repo 初始化至 PR #11 開立）。
+統計區間：2026-11-09 起（repo 初始化至 PR #11 merge）。
 
 ---
 
