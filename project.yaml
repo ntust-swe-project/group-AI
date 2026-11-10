@@ -42,4 +42,4 @@ specialists:
   ui: "godot-specialist"
 
 commands:
-  test: "godot --headless -d -s addons/gut/gut_cmdln.gd --path . -gexit"
+  test: "godot --headless -s addons/gut/gut_cmdln.gd --path . -gexit"
