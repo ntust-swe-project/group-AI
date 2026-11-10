@@ -26,7 +26,7 @@ vision-refs: ["3.2"]
 | R5 | 走到工作點、再待 2 秒（遊戲時間）指派完成並消失，接著做佇列的下一件，佇列空就閒晃 | Q5；I1、I6 |
 | R6 | 牆、站外、走不到的格子按右鍵，動作選單不打開（目前只有「指派工作」一項）；子選單只列走得到的人，指給走不到的人也不建立 | Q4 |
 | R7 | 可以取消指派；取消手上的事時，當下改做佇列的下一件 | Q6；I4 |
-| R8 | 點殖民者時，資訊面板列出他手上的事與佇列（優先度、格子） | 訪談 Q5（看得到有在動）；I5 |
+| R8 | 點殖民者時，資訊面板列出他手上的事與佇列（優先度、格子），地圖上也標出這些格子；沒選人時地圖不畫標記 | 訪談 Q5（看得到有在動）；I5、I7 |
 | R9 | 指派、佇列、搶占都是純邏輯，不繼承 `Node` | `SYSTEM.md` S1 |
 
 ### 驗收條件
@@ -42,7 +42,7 @@ vision-refs: ["3.2"]
 | A7 | 對牆、站外按右鍵，動作選單不打開；選「指派工作」才開出子選單；指給走不到的人，指派不建立 | R1、R6 | GUT |
 | A8 | 指派相關的邏輯 class 都不是 `Node` | R9 | GUT |
 | A9 | 執行遊戲：右鍵地板開出動作選單，選「指派工作」開出子選單，可選殖民者與 1–5；執行後殖民者立刻轉向，兩秒內肉眼看得到在移動（SC4 的最差上限） | R1、R4 | 手動 |
-| A10 | 執行遊戲：點殖民者，面板列出手上的事與佇列；在選單取消後，面板與殖民者行為隨之改變 | R7、R8 | 手動 |
+| A10 | 執行遊戲：點殖民者，面板列出手上的事與佇列，地圖上他正在做的格子是實線框、排隊的是虛線框，都標優先度；取消後面板、標記與殖民者行為隨之改變；點空地後標記消失 | R7、R8 | 手動 |
 
 ### 不做什麼
 
@@ -73,6 +73,7 @@ vision-refs: ["3.2"]
 | I4 | 取消方式：右鍵點有指派的格子，選單列出該格的指派，各有「取消」 | INV | 納入 | 組員 A 同意：取消沿用同一個右鍵選單 |
 | I5 | 資訊面板列出手上的事與佇列（取代 I2 的可見性） | INV | 納入 | 組員 A 同意：不畫地圖標記，改在面板看 |
 | I6 | 「2 秒」用遊戲時間：快轉變短、暫停不計（與 001 的移動一致） | INV | 納入 | 組員 A 同意 |
+| I7 | 選中殖民者時才標出他的格子：正在做實線框、排隊虛線框，都標優先度；不畫連線 | INV | 納入 | 組員 A 審 T1–T6 時發現格子沒標記；選這個做法而非全站標記，以免擋視野（I2） |
 
 ## Plan
 
@@ -89,7 +90,7 @@ vision-refs: ["3.2"]
 | `logic/assignment.gd`、`task_queue.gd`、`assignment_board.gd` | 新增 | 指派、佇列、搶占、取消 |
 | `logic/wanderer.gd` | 修改 | 執行任務、到點計時 |
 | `scenes/assign_menu.tscn`／`.gd`、`scenes/context_menu.tscn`／`.gd` | 新增 | 指派子選單、右鍵動作選單 |
-| `scenes/main.gd`、`scenes/hud.tscn`／`.gd` | 修改 | 右鍵輸入、面板列佇列 |
+| `scenes/main.gd`、`scenes/hud.tscn`／`.gd`、`scenes/station_map.gd` | 修改 | 右鍵輸入、面板列佇列、選中者的任務格標記 |
 | `test/test_task_queue.gd`、`test_assignment_board.gd`、`test_wanderer.gd`、`test_assign_menu.gd`、`test_logic_is_pure.gd`、`test_info_panel.gd` | 新增／修改 | A1–A8；A9、A10 的接線 |
 
 動到 `project.godot` 共用欄位嗎：否
@@ -101,7 +102,7 @@ vision-refs: ["3.2"]
 | API | 狀態 | 文件連結 |
 | --- | --- | --- |
 | `OptionButton`：`add_item()`、`clear()`、`select()`、`get_selected_id()`、`get_item_index()`、`get_item_id()`、`item_count`、`item_selected` | 已驗證 | `docs.godotengine.org/en/4.7/classes/class_optionbutton.html` |
-| `Control`：`position`、`size`、`get_rect()`、`reset_size()`、`size_flags_horizontal`、`mouse_filter`、`focus_mode`；`PanelContainer`、`VBoxContainer`、`HBoxContainer`；`Node` 的 `queue_free()`、`remove_child()`、`get_children()`、`find_children()`；`AStarGrid2D` 沿用 001 已驗證 | 已驗證 | `.../class_control.html` |
+| `Control`：`position`、`size`、`get_rect()`、`reset_size()`、`size_flags_horizontal`、`mouse_filter`、`focus_mode`；`PanelContainer`、`VBoxContainer`、`HBoxContainer`；`Node` 的 `queue_free()`、`remove_child()`、`get_children()`、`find_children()`；`AStarGrid2D` 沿用 001 已驗證；`CanvasItem.draw_dashed_line()`、`draw_string()`、`ThemeDB.get_fallback_font()` | 已驗證 | `.../class_control.html` |
 | `MOUSE_BUTTON_RIGHT` | 已驗證 | `.../class_@globalscope.html` |
 
 ### Tasks
@@ -112,10 +113,11 @@ vision-refs: ["3.2"]
 - [ ] **T4** — 右鍵選單：只在可達地板打開、選人與優先度、列出並取消該格指派 ／ 驗收：A7（前半）、A9
 - [ ] **T5** — 資訊面板列出手上的事與佇列 ／ 驗收：A10
 - [ ] **T6** — 右鍵改開動作選單，「指派工作」開出 T4 的指派面板（子選單） ／ 驗收：A7、A9
+- [ ] **T7** — 選中殖民者時在地圖標出他的任務格（實線／虛線框＋優先度） ／ 驗收：A10
 
 ## Gate A — 實作前核准
 
-Owner：組員 A　日期：2026-11-11　結果：核准（第 2 次，重簽 changelog 第 2、3 列的 Plan 補充與兩層選單）
+Owner：組員 A　日期：2026-11-11　結果：核准（第 3 次，重簽 changelog 第 4 列的選中者任務格標記）
 
 - [x] Owner 讀過 feature 檔全文（不是摘要）
 - [x] 每條需求追得到來源；追不到的已標 `INV` 並決定去留
@@ -144,3 +146,4 @@ Owner：組員 A　日期：2026-11-11　結果：核准（第 2 次，重簽 ch
 | 2026-11-11 | 初版 | 立項 |
 | 2026-11-11 | Plan 補上 `test_info_panel.gd` 與實作中多用到的 API（`reset_size()`、`get_item_index()` 等，皆對 4.7.2 核對） | 實作時用到、Gate A 時沒列；比照 001 changelog 第 4 列 |
 | 2026-11-11 | R1、R6、A7、A9 改為兩層：右鍵開動作選單，「指派工作」是子選單；新增 T6 | 組員 A 審 T1–T5 時提出：右鍵應開一般選單，指派是其中一項，之後可再加功能（呼應 Q7） |
+| 2026-11-11 | R8、A10 加上選中者的任務格標記；新增 I7、T7 | 組員 A 審 T1–T6 時發現指派的格子沒有標記；選「只標選中的人」，I2（全站標記加連線）仍不納入 |
