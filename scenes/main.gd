@@ -12,7 +12,6 @@ var wanderers := {}  # colonist id -> Wanderer
 var board := AssignmentBoard.new(grid)
 
 var _views := {}  # colonist id -> colonist view node
-var _menu_entries := []  # what the open assignment menu lists
 var _rng := RandomNumberGenerator.new()
 
 @onready var station_map: Node2D = $StationMap
@@ -27,7 +26,7 @@ func _ready() -> void:
 	hud.add_colonist_requested.connect(_on_add_colonist_requested)
 	context_menu.assign_chosen.connect(_on_assign_chosen)
 	assign_menu.assign_requested.connect(_on_assign_requested)
-	assign_menu.cancel_requested.connect(_on_cancel_requested)
+	hud.cancel_task_requested.connect(_on_cancel_task_requested)
 	hud.refresh()
 	station_map.position = ((get_viewport_rect().size - station_map.pixel_size()) / 2.0).round()
 	for colonist in colony.colonists:
@@ -41,8 +40,6 @@ func _process(delta: float) -> void:
 	for id in wanderers:
 		wanderers[id].advance(game_seconds)
 		_views[id].position = station_map.cell_to_pixel(wanderers[id].position())
-	if assign_menu.visible:
-		_refresh_assign_menu()
 
 
 func _on_add_colonist_requested() -> void:
@@ -132,8 +129,7 @@ func _open_assign_menu(cell: Vector2i, screen_position: Vector2) -> void:
 		return
 	var reachable := board.who_can_reach(cell)
 	var people: Array[Colonist] = colony.colonists.filter(func(c): return reachable.has(c.id))
-	_menu_entries = _existing_at(cell)
-	assign_menu.open(cell, screen_position, people, _menu_entries)
+	assign_menu.open(cell, screen_position, people)
 
 
 func _on_assign_requested(colonist_id: int, priority: int) -> void:
@@ -141,32 +137,8 @@ func _on_assign_requested(colonist_id: int, priority: int) -> void:
 	assign_menu.close()
 
 
-func _on_cancel_requested(assignment_id: int) -> void:
+func _on_cancel_task_requested(assignment_id: int) -> void:
 	board.cancel(assignment_id)
-	_refresh_assign_menu()
-
-
-## Keep the open menu's list current: assignments finish while it is open.
-func _refresh_assign_menu() -> void:
-	var entries := _existing_at(assign_menu.cell)
-	if entries != _menu_entries:
-		_menu_entries = entries
-		assign_menu.show_existing(entries)
-
-
-func _existing_at(cell: Vector2i) -> Array:
-	var entries := []
-	for task in board.at(cell):
-		var owner_id := board.owner_of(task.id)
-		entries.append({"id": task.id, "name": _colonist(owner_id).name, "priority": task.priority})
-	return entries
-
-
-func _colonist(colonist_id: int) -> Colonist:
-	for colonist in colony.colonists:
-		if colonist.id == colonist_id:
-			return colonist
-	return null
 
 
 func _cell_at(map_point: Vector2) -> Vector2i:

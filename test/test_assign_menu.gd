@@ -79,17 +79,6 @@ func test_executing_assigns_the_chosen_colonist_and_closes():
 	assert_false(menu.visible)
 
 
-func test_menu_lists_the_cells_assignments_and_can_cancel_them():
-	var chosen: Colonist = main.colony.colonists[0]
-	main.board.create(chosen.id, _centre(), 3)
-	_click_cell(_centre())
-	var buttons: Array = menu.get_node("%ExistingList").find_children("*", "Button", true, false)
-	assert_eq(buttons.size(), 1)
-	buttons[0].pressed.emit()
-	assert_eq(main.board.at(_centre()).size(), 0)
-	assert_null(main.wanderers[chosen.id].tasks.current)
-
-
 func test_close_button_and_left_click_close_the_menu():
 	_click_cell(_centre())
 	menu.get_node("%CloseButton").pressed.emit()
@@ -105,18 +94,14 @@ func test_added_colonists_show_up_in_the_menu():
 	assert_eq(menu.get_node("%ColonistPicker").item_count, 4)
 
 
-func test_finished_assignments_drop_off_the_open_menu():
-	var chosen: Colonist = main.colony.colonists[0]
-	var walker: Wanderer = main.wanderers[chosen.id]
-	main.board.create(chosen.id, walker.cell, 3)  # where they stand: only the work time left
-	_click_cell(walker.cell)
-	assert_eq(menu.get_node("%ExistingList").get_child_count(), 1)
-	main.clock.paused = false
-	gut.simulate(main, 1, Wanderer.WORK_SECONDS + 0.1)
-	assert_eq(menu.get_node("%ExistingList").get_child_count(), 0)
-
-
 func test_adding_a_colonist_closes_the_menu():
 	_click_cell(_centre())
 	main.get_node("Hud").get_node("%AddColonistButton").pressed.emit()
 	assert_false(menu.visible)
+
+
+func test_menu_no_longer_lists_the_cells_assignments():
+	main.board.create(main.colony.colonists[0].id, _centre(), 3)
+	_click_cell(_centre())
+	for button in menu.find_children("*", "Button", true, false):
+		assert_ne(button.text, "取消", "cancelling moved to the info panel (I8)")

@@ -73,7 +73,11 @@ func _empty_floor_point() -> Vector2:
 # feature 002 T5 — the panel lists what the colonist is doing (A10)
 
 func _tasks_text() -> String:
-	return main.get_node("Hud").get_node("%InfoTasks").text
+	return main.get_node("Hud").info_tasks_text()
+
+
+func _cancel_buttons() -> Array:
+	return main.get_node("Hud").get_node("%InfoTasks").find_children("*", "Button", true, false)
 
 
 func test_idle_colonist_shows_wandering_and_an_empty_queue():
@@ -108,3 +112,44 @@ func test_panel_follows_changes_while_open():
 	main.board.cancel(task.id)
 	gut.simulate(main, 1, 0.0)
 	assert_string_contains(_tasks_text(), "閒晃")
+
+
+# feature 002 T8 — cancel from the panel (A6, A10, I8)
+
+func _busy_first_colonist() -> Colonist:
+	var c: Colonist = _first_view().colonist
+	main.board.create(c.id, Vector2i(22, 12), 5)
+	main.board.create(c.id, Vector2i(20, 12), 2)
+	_click(main.station_map.cell_to_pixel(main.wanderers[c.id].position()))
+	gut.simulate(main, 1, 0.0)
+	return c
+
+
+func test_every_listed_task_has_a_cancel_button():
+	_busy_first_colonist()
+	assert_eq(_cancel_buttons().size(), 2)
+
+
+func test_cancelling_the_current_task_starts_the_next_one():
+	var c := _busy_first_colonist()
+	_cancel_buttons()[0].pressed.emit()  # current: (22, 12)
+	var tasks: TaskQueue = main.wanderers[c.id].tasks
+	assert_eq(tasks.current.cell, Vector2i(20, 12))
+	assert_eq(main.wanderers[c.id].destination(), Vector2i(20, 12), "rerouted at once")
+	gut.simulate(main, 1, 0.0)
+	assert_eq(_cancel_buttons().size(), 1)
+
+
+func test_cancelling_a_queued_task_only_removes_it():
+	var c := _busy_first_colonist()
+	_cancel_buttons()[1].pressed.emit()  # queued: (20, 12)
+	var tasks: TaskQueue = main.wanderers[c.id].tasks
+	assert_eq(tasks.current.cell, Vector2i(22, 12))
+	assert_eq(tasks.queued().size(), 0)
+
+
+func test_buttons_are_not_rebuilt_while_nothing_changes():
+	_busy_first_colonist()
+	var button: Button = _cancel_buttons()[0]
+	gut.simulate(main, 5, 0.0)
+	assert_true(is_instance_valid(button) and button.is_inside_tree(), "same button, still clickable")
