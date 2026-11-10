@@ -23,11 +23,12 @@ repo 裡附帶的 Claude Code 工具，pull 下來就能用。**它們是工具�
 ## 3. 跑測試
 
 ```bash
-godot --headless -d -s addons/gut/gut_cmdln.gd --path . -gexit
+godot --headless -s addons/gut/gut_cmdln.gd --path . -gexit
 ```
 
 - 測試放 `test/`，檔名 `test_*.gd`，`extends GutTest`。設定在 `.gutconfig.json`。
-- 結束碼 `0` 全過、`1` 有失敗。
+- 結束碼 `0` 全過、`1` 有失敗。測試檔有語法錯誤時 GUT 只會跳過它、仍回 `0`，所以 `test/hooks/post_run.gd` 補了檢查：GUT 這次要跑的測試檔有載入失敗的、或一個測試都沒跑，就回 `1`。用 `-gselect` 等篩選掉的檔、不是測試的輔助檔不算。這項檢查要 log level ≥ 1（`-glog=0` 時會印出「NOT RUN」）。
+- **不要加 `-d`**：語法錯誤時 Godot 會停在互動式除錯器等輸入，agent 跑測試會卡住。
 - 純邏輯 class 不繼承 `Node`（`SYSTEM.md` S1），直接 `new()` 來測，不用起場景。
 - 寫測試時叫 `/gut`，或直接說「用 GUT 寫測試」，Claude 會自動載入。
 - `project.yaml` 的 `commands.test` 已設成上面這行，模板的 agent 會跑 GUT，不會跑它預設的 gdUnit4。
