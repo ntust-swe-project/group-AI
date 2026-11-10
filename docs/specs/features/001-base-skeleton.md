@@ -38,7 +38,7 @@ vision-refs: ["3.1", "3.2", "4.1", "6"]
 | A4 | 新局殖民者 3 個、名字不重複且都在名字表裡；加一個後數量 +1 | R4、R6 | GUT `test_colony` |
 | A5 | 找路結果不穿過牆格，起終點相同時路徑長度為 1 | R5 | GUT `test_station_grid` |
 | A6 | `DayClock`、`Colony`、`Colonist`、`StationGrid` 的實例都不是 `Node` | R7 | GUT `test_logic_is_pure` |
-| A7 | 執行遊戲：看得到橢圓大廳（未縮放時約佔畫面 6–7 成），牆緊貼地板外圍、站外不畫；格線粗細一致；3 個殖民者在大廳內走動且不穿牆 | R3、R4、R5 | 手動 |
+| A7 | 執行遊戲：看得到橢圓大廳（未縮放時**地板面積**約佔畫面 6 成），牆緊貼地板外圍、站外不畫；格線粗細一致；3 個殖民者在大廳內走動且不穿牆 | R3、R4、R5 | 手動 |
 | A8 | 執行遊戲：天數標籤隨時間更新；按暫停後停止、按快轉後變快；到第 30 天停住 | R1、R2、R8 | 手動（用快轉） |
 | A9 | 點任一殖民者，面板顯示他的名字；點空地面板關閉 | R9 | 手動 |
 | A10 | 按「下一天」天數 +1；按「加殖民者」地圖上多一個會走動的殖民者 | R6、R10 | 手動 |
@@ -76,9 +76,8 @@ vision-refs: ["3.1", "3.2", "4.1", "6"]
 
 ### 方案
 
-- **純邏輯**（`extends RefCounted`）：`DayClock` 吃真實秒數 `advance(delta)`，處理天數、暫停、倍速、第 30 天停止。`Colony` 持有殖民者陣列（不假設數量，SC1）。`Colonist` 目前只有 id 與名字，名字從 `colonist_names.gd` 不重複抽取。一天長度、倍速範圍、地圖尺寸、格子大小、走路速度都是具名常數，方便之後調整；後三者是實作時的暫定值（大廳 48×27 格、每格 32 px、每秒 2 格），驗收時再定。`StationGrid` 包一個 `AStarGrid2D`，格子分站外、牆、地板三種：地圖由房間（矩形、橢圓）與走道疊成，房間內是地板，緊貼地板的外圍自動成牆，站外與牆都設成 solid。
-- **畫面**：`main.tscn` 持有上述邏輯物件，每幀呼叫 `advance`。地圖用 `_draw()` 畫格子，殖民者是圓點加名字，沿 `StationGrid` 的路徑移動。HUD 放天數、變速按鈕、資訊面板、除錯按鈕。
-- **建議 Q5 用格子**：`AStarGrid2D` 是 `RefCounted`，找路能留在邏輯層用 GUT 測（A5），之後建造放設施也自然對齊格子。自由移動要靠場景樹裡的 `NavigationRegion2D`，邏輯層測不到。
+- **純邏輯**（`extends RefCounted`）：`DayClock` 吃真實秒數 `advance(delta)`，處理天數、暫停、倍速、第 30 天停止。`Colony` 持有殖民者陣列（不假設數量，SC1）。`Colonist` 目前只有 id 與名字，名字從 `colonist_names.gd` 不重複抽取。一天長度、倍速範圍、地圖尺寸、格子大小、走路速度都是具名常數，方便之後調整；後兩者是實作時的暫定值（每格 32 px、每秒 2 格），驗收時再定；大廳 56×31 格（含牆）由組員 A 依 A7 定。`StationGrid` 包一個 `AStarGrid2D`，格子分站外、牆、地板三種：地圖由房間（矩形、橢圓）與走道疊成，房間內是地板，緊貼地板的外圍自動成牆，站外與牆都設成 solid。
+- **畫面**：`main.tscn` 持有上述邏輯物件，每幀呼叫 `advance`。地圖用 `_draw()` 畫格子，殖民者是圓點加名字，沿 `StationGrid` 的路徑移動。HUD 放天數、變速按鈕、資訊面板、除錯按鈕。**建議 Q5 用格子**：`AStarGrid2D` 是 `RefCounted`，找路能留在邏輯層用 GUT 測（A5），之後建造放設施也自然對齊格子。自由移動要靠場景樹裡的 `NavigationRegion2D`，邏輯層測不到。
 
 ### 要動的檔案
 
@@ -98,8 +97,8 @@ vision-refs: ["3.1", "3.2", "4.1", "6"]
 
 | API | 狀態 | 文件連結 |
 | --- | --- | --- |
-| `AStarGrid2D`：`region`、`cell_size`、`diagonal_mode`、`update()`、`set_point_solid()`、`get_id_path()`、`is_in_boundsv()`、`is_point_solid()`；繼承 `RefCounted` | 已驗證 | `docs.godotengine.org/en/4.7/classes/class_astargrid2d.html` |
-| `CanvasItem`：`_draw()`、`draw_rect()`、`draw_circle()`、`queue_redraw()`、`get_global_mouse_position()` | 已驗證 | `.../class_canvasitem.html` |
+| `AStarGrid2D`：`region`、`cell_size`、`diagonal_mode`、`update()`、`set_point_solid()`、`get_id_path()`、`is_in_boundsv()`、`is_point_solid()`、`fill_solid_region()`；繼承 `RefCounted`；`PackedByteArray.fill()` | 已驗證 | `docs.godotengine.org/en/4.7/classes/class_astargrid2d.html` |
+| `CanvasItem`：`_draw()`、`draw_rect()`、`draw_circle()`、`draw_line()`（寬度 -1 為不隨縮放的細線）、`queue_redraw()`、`get_global_mouse_position()` | 已驗證 | `.../class_canvasitem.html` |
 | `Node._process()`、`Node._unhandled_input()`、`InputEventMouseButton` 的 `button_index`／`pressed`／`position`、`Node2D.to_local()`／`to_global()`、`Viewport.set_input_as_handled()` | 已驗證 | `.../class_node.html` |
 | `BaseButton.pressed`、`Label.text`、`Node2D.position`、`RandomNumberGenerator.randi_range()` | 已驗證 | `.../class_basebutton.html` 等 |
 
@@ -113,11 +112,11 @@ vision-refs: ["3.1", "3.2", "4.1", "6"]
 - [x] **T6** — HUD：天數與變速 ／ 驗收：A8
 - [x] **T7** — 資訊面板 ／ 驗收：A9
 - [x] **T8** — 除錯按鈕 ／ 驗收：A10
-- [ ] **T9** — 橢圓大廳與房間結構，格線每條只畫一次且不受縮放影響 ／ 驗收：A7、A11
+- [x] **T9** — 橢圓大廳與房間結構，格線每條只畫一次且不受縮放影響 ／ 驗收：A7、A11
 
 ## Gate A — 實作前核准
 
-Owner：組員 A　日期：2026-11-10　結果：核准（第 5 次，重簽 changelog 第 5 列的橢圓大廳與 T9）
+Owner：組員 A　日期：2026-11-10　結果：核准（第 6 次，重簽 changelog 第 6 列的大廳尺寸與 API 表）
 
 - [x] Owner 讀過 feature 檔全文（不是摘要）
 - [x] 每條需求追得到來源；追不到的已標 `INV` 並決定去留
@@ -148,3 +147,4 @@ Owner：組員 A　日期：2026-11-10　結果：核准（第 5 次，重簽 ch
 | 2026-11-10 | 新增 I6：名字表用完時加數字 | T2 審查 agent 指出這是 AI 自行決定、spec 沒寫的行為；組員 A 選擇納入 |
 | 2026-11-10 | Plan 補上實作中多出的檔案（`wanderer.gd`、5 個測試檔）與 API（`is_point_solid()`、滑鼠點擊相關），並寫明三個暫定值 | 審查 agent 指出 Plan 檔案表與 API 表未涵蓋；暫定值原本只寫在程式註解裡 |
 | 2026-11-10 | R3、A7 改為橢圓大廳、地圖由房間組成、格線粗細一致；新增 A11、T9 | 組員 A 驗收前看截圖提出：大廳要橢圓、之後要能加房間；格線在縮放後粗細不均 |
+| 2026-11-11 | A7 的「6 成」改以地板面積算，大廳定為 56×31 格；API 表補 `fill_solid_region()`、`draw_line()`、`PackedByteArray.fill()` | T9 審查 agent 指出橢圓後外框與地板面積不同（48×27 的地板只有約 45%），組員 A 選以面積算；新 API 未列入驗證表 |
