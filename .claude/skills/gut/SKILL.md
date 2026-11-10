@@ -10,7 +10,7 @@ description: Godot Unit Testing (GUT) framework for GDScript. Covers test struct
 > Changes from the original (2026-11-10):
 > 1. Doubles no longer return `null`. Since GUT 9.7.0 (Godot 4.7 type checks) they return the default value of the method's declared return type, and `to_do_nothing()` does the same. Fixed in "Creating Doubles" and "Stubbing".
 > 2. Added: stubbing a return value of the wrong type logs a GUT error and an engine error.
-> 3. Dropped `-d` from every command. With `-d`, a test script that fails to parse drops Godot into its interactive debugger and the run hangs until killed. Without `-d`, GUT skips that script and still exits `0`; this repo's `test/hooks/post_run.gd` turns that into exit `1`.
+> 3. Dropped `-d` from every command. With `-d`, a test script that fails to parse drops Godot into its interactive debugger and the run hangs until killed. Without `-d`, GUT skips that script and still exits `0`; this repo's `test/hooks/post_run.gd` turns that into exit `1` (needs log level >= 1).
 >
 > Checked against GUT 9.7.1 source: every function name, CLI flag and `.gutconfig.json` key below exists. Behaviour claims were only checked against the 9.6.0 and 9.7.0 release notes.
 
@@ -323,7 +323,7 @@ Configure in `.gutconfig.json`:
 
 Tests are run from the command line — no GUI required. Always include `-gexit` so the process exits after the run. Returns `0` on success, `1` on any failure (suitable for CI).
 
-**Do not add `-d` in non-interactive runs** (agents, CI): a parse error then opens Godot's interactive debugger and the process hangs. **A script that fails to parse is skipped with only a warning and does not fail the run** — in this repo `test/hooks/post_run.gd` (set as `post_run_script` in `.gutconfig.json`) fails the run when any `test_*.gd` was not collected or no test ran.
+**Do not add `-d` in non-interactive runs** (agents, CI): a parse error then opens Godot's interactive debugger and the process hangs. **A script that fails to parse is skipped with only a warning and does not fail the run** — in this repo `test/hooks/post_run.gd` (set as `post_run_script` in `.gutconfig.json`) fails the run when a test script GUT tried to collect does not load, or no test ran. Scripts excluded by `-gselect`/`-gdir` and non-test helpers are not affected. It cannot see skipped scripts at `-glog=0` and says so.
 
 ```bash
 # Run all tests in a directory

@@ -1,39 +1,42 @@
 extends GutHookScript
 
-# GUT exits 0 when a test script fails to parse: it skips the file with a
-# warning and only counts failed asserts. Fail the run instead when any
-# test_*.gd under res://test/ was not collected, or when nothing ran.
+# GUT skips a test script that fails to parse: it logs "Ignoring script <path>
+# because it does not extend GutTest" and still exits 0. Fail the run when a
+# script GUT tried to collect this run was dropped because it does not load.
+# Scripts that load fine but are not GutTest (helpers) and scripts excluded by
+# -gselect/-gdir/-gprefix were never tried or load fine, so they do not fail.
 
-const TEST_DIR := "res://test/"
+const IGNORED_PREFIX := "Ignoring script "
+const IGNORED_SUFFIX := " because it does not extend GutTest"
 
 
 func run():
-	var collected := {}
-	for script in gut.get_test_collector().scripts:
-		collected[script.path] = true
+	if gut.log_level < 1:
+		# GUT stops recording warnings at log level 0, so this check is blind.
+		gut.logger.error("Parse-error check NOT RUN: needs log level >= 1 (-glog=0 was used).")
+	else:
+		var broken := _scripts_that_failed_to_load()
+		if not broken.is_empty():
+			for path in broken:
+				gut.logger.error("Test script was not run, it does not load (parse error?): " + path)
+			set_exit_code(1)
+			return
 
-	var skipped: Array[String] = []
-	for path in _find_test_files(TEST_DIR):
-		if not collected.has(path):
-			skipped.append(path)
-
-	if not skipped.is_empty():
-		for path in skipped:
-			gut.logger.error("Test script was not run (parse error?): " + path)
-		set_exit_code(1)
-	elif gut.get_test_count() == 0:
+	if gut.get_test_count() == 0:
 		gut.logger.error("No tests ran.")
 		set_exit_code(1)
 
 
-func _find_test_files(dir_path: String) -> Array[String]:
-	var found: Array[String] = []
-	var dir := DirAccess.open(dir_path)
-	if dir == null:
-		return found
-	for file in dir.get_files():
-		if file.begins_with("test_") and file.ends_with(".gd"):
-			found.append(dir_path.path_join(file))
-	for sub in dir.get_directories():
-		found.append_array(_find_test_files(dir_path.path_join(sub)))
-	return found
+func _scripts_that_failed_to_load() -> Array[String]:
+	var broken: Array[String] = []
+	for entry in gut.logger.get_warnings():
+		var text := str(entry)
+		var start := text.find(IGNORED_PREFIX)
+		var end := text.find(IGNORED_SUFFIX)
+		if start == -1 or end == -1:
+			continue
+		var path := text.substr(start + IGNORED_PREFIX.length(), end - start - IGNORED_PREFIX.length())
+		var script = load(path)
+		if script == null or not script.can_instantiate():
+			broken.append(path)
+	return broken
