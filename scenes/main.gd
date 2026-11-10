@@ -9,18 +9,23 @@ var clock := DayClock.new()
 var grid := StationGrid.make_hall()
 var colony := Colony.new()
 var wanderers := {}  # colonist id -> Wanderer
+var board := AssignmentBoard.new(grid)
 
 var _views := {}  # colonist id -> colonist view node
+var _menu_entries := []  # what the open assignment menu lists
 var _rng := RandomNumberGenerator.new()
 
 @onready var station_map: Node2D = $StationMap
 @onready var hud: CanvasLayer = $Hud
+@onready var assign_menu: Control = $Hud/%AssignMenu
 
 
 func _ready() -> void:
 	station_map.grid = grid
 	hud.clock = clock
 	hud.add_colonist_requested.connect(_on_add_colonist_requested)
+	assign_menu.assign_requested.connect(_on_assign_requested)
+	assign_menu.cancel_requested.connect(_on_cancel_requested)
 	hud.refresh()
 	station_map.position = ((get_viewport_rect().size - station_map.pixel_size()) / 2.0).round()
 	for colonist in colony.colonists:
@@ -34,17 +39,28 @@ func _process(delta: float) -> void:
 	for id in wanderers:
 		wanderers[id].advance(game_seconds)
 		_views[id].position = station_map.cell_to_pixel(wanderers[id].position())
+	if assign_menu.visible:
+		_refresh_assign_menu()
 
 
 func _on_add_colonist_requested() -> void:
+	assign_menu.close()  # its colonist list would be out of date
 	_show_colonist(colony.add_colonist())
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	var click := event as InputEventMouseButton
-	if click == null or not click.pressed or click.button_index != MOUSE_BUTTON_LEFT:
+	if click == null or not click.pressed:
 		return
-	var colonist := colonist_at(station_map.to_local(click.position))
+	var map_point := station_map.to_local(click.position)
+	if click.button_index == MOUSE_BUTTON_RIGHT:
+		_open_assign_menu(_cell_at(map_point), click.position)
+		get_viewport().set_input_as_handled()
+		return
+	if click.button_index != MOUSE_BUTTON_LEFT:
+		return
+	assign_menu.close()
+	var colonist := colonist_at(map_point)
 	if colonist:
 		hud.show_colonist(colonist)
 	else:
@@ -68,6 +84,7 @@ func colonist_at(map_point: Vector2) -> Colonist:
 func _show_colonist(colonist: Colonist) -> void:
 	var walker := Wanderer.new(grid, _free_floor_cell(), _rng)
 	wanderers[colonist.id] = walker
+	board.register(colonist.id, walker)
 	var view := ColonistView.instantiate()
 	view.colonist = colonist
 	view.position = station_map.cell_to_pixel(walker.position())
@@ -84,3 +101,52 @@ func _free_floor_cell() -> Vector2i:
 	if cells.is_empty():
 		cells = grid.floor_cells()
 	return cells[_rng.randi_range(0, cells.size() - 1)]
+
+
+# --- feature 002: assignments ---
+
+func _open_assign_menu(cell: Vector2i, screen_position: Vector2) -> void:
+	if not board.can_assign_at(cell):
+		assign_menu.close()
+		return
+	var reachable := board.who_can_reach(cell)
+	var people: Array[Colonist] = colony.colonists.filter(func(c): return reachable.has(c.id))
+	_menu_entries = _existing_at(cell)
+	assign_menu.open(cell, screen_position, people, _menu_entries)
+
+
+func _on_assign_requested(colonist_id: int, priority: int) -> void:
+	board.create(colonist_id, assign_menu.cell, priority)
+	assign_menu.close()
+
+
+func _on_cancel_requested(assignment_id: int) -> void:
+	board.cancel(assignment_id)
+	_refresh_assign_menu()
+
+
+## Keep the open menu's list current: assignments finish while it is open.
+func _refresh_assign_menu() -> void:
+	var entries := _existing_at(assign_menu.cell)
+	if entries != _menu_entries:
+		_menu_entries = entries
+		assign_menu.show_existing(entries)
+
+
+func _existing_at(cell: Vector2i) -> Array:
+	var entries := []
+	for task in board.at(cell):
+		var owner_id := board.owner_of(task.id)
+		entries.append({"id": task.id, "name": _colonist(owner_id).name, "priority": task.priority})
+	return entries
+
+
+func _colonist(colonist_id: int) -> Colonist:
+	for colonist in colony.colonists:
+		if colonist.id == colonist_id:
+			return colonist
+	return null
+
+
+func _cell_at(map_point: Vector2) -> Vector2i:
+	return Vector2i((map_point / station_map.CELL_SIZE).floor())

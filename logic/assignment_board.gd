@@ -22,10 +22,16 @@ func register(colonist_id: int, walker: Wanderer) -> void:
 ## True when `cell` is floor that at least one colonist can walk to: the only
 ## cells the assignment menu opens on.
 func can_assign_at(cell: Vector2i) -> bool:
-	for walker in _walkers.values():
-		if _can_reach(walker, cell):
-			return true
-	return false
+	return not who_can_reach(cell).is_empty()
+
+
+## Ids of the colonists who can walk to `cell`, in the order they joined.
+func who_can_reach(cell: Vector2i) -> Array[int]:
+	var ids: Array[int] = []
+	for colonist_id in _walkers:
+		if _can_reach(_walkers[colonist_id], cell):
+			ids.append(colonist_id)
+	return ids
 
 
 ## Gives colonist `colonist_id` a new assignment at `cell`. Returns null and

@@ -91,3 +91,11 @@ func test_menu_opens_only_on_floor_someone_can_reach():
 	assert_false(board.can_assign_at(Vector2i(7, 2)), "wall")
 	assert_false(board.can_assign_at(Vector2i(0, 0)), "space")
 	assert_false(board.can_assign_at(Vector2i(10, 2)), "floor nobody can reach")
+
+
+func test_who_can_reach_lists_only_colonists_who_can_walk_there():
+	var cyd := Wanderer.new(grid, Vector2i(10, 2))  # stands in room B
+	board.register(3, cyd)
+	assert_eq(board.who_can_reach(Vector2i(4, 2)), [1, 2] as Array[int])
+	assert_eq(board.who_can_reach(Vector2i(11, 3)), [3] as Array[int])
+	assert_true(board.can_assign_at(Vector2i(11, 3)), "someone can reach room B now")
