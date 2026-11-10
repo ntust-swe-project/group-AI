@@ -1,6 +1,6 @@
 # AI-Agent 組 開發流程（Spec-Driven Development）
 
-**v2.0 · 2026-11-10** — 可滾動修改，見 §11
+**v2.1 · 2026-11-10** — 可滾動修改，見 §11
 
 ## 1. 這份文件
 
@@ -150,6 +150,18 @@ feature 幾乎都含程式碼，所以 S3 實際上一律要審；免審的是�
 ```bash
 gh pr list --state merged --json number,title,reviewDecision
 ```
+- **例外：自己的 ai-log 可以直接 push 到 `main`**，不開 PR。條件：
+  - 只動 `docs/ai-log/AI_LOG.md`，而且只新增或修改**自己的**紀錄列、自己的工具揭露列，以及 ai-log 的 §3 統計
+  - 由**人類** commit 並 push；agent 仍不得 push 到 `main`（§3）
+  - push 前先 pull，避免兩人同時改統計造成衝突
+  - 各自核對自己的紀錄，不另設對方核對
+  - 修改**對方**的紀錄列或其他檔案，照常開 PR
+
+  直接 push 的紀錄用這個命令查（沿 `main` 的第一個 parent 走、排除 merge commit，剩下的就是直接 push 的）：
+
+  ```bash
+  git log --first-parent --no-merges main -- docs/ai-log/
+  ```
 
 **本組的 code scope 補充**（`COMMIT_CONVENTION.md` 要求各組自訂並記在自己 repo）：
 
@@ -197,3 +209,4 @@ gh pr list --state merged --json number,title,reviewDecision
 | v1.0 | 2026-11-09 | 初版：三道關卡、兩層 spec、人類核准 diff 後由 agent commit、agent 紀錄裁切規則 | 依 `VISION.md` §10 建立本組 workflow |
 | v1.1 | 2026-11-09 | 記錄 §6 的例外：`main` 無法設 branch protection，改由人工把關 | 免費方案的私有 repo 不支援 ruleset（API 回 403）。PR #1 就在沒有 approve 的情況下被 merge |
 | v2.0 | 2026-11-10 | 關卡 3 道→2 道；五個檔併成兩個；檢查表改為單一來源；加文件預算、PR 模板、merge 不 squash、自我稽核命令、diff 核准深度分級、審查 agent | 量測結果：`docs/` 已累積 25,226 字，GDScript 與 spec 各 0 份。原因有三 —— 同一事實被記 4–6 次、固定成本與 feature 大小無關、雜務也開 run 檔。作業要求的四項紀錄一條沒少，砍掉的是重複與儀式。另外人類逐行讀 diff 在文件變更上成本不成比例，改為按變更類型分級，並要求**人類 review 前先由新 session 的審查 agent 審一遍**（把成本從人移到機器，Verifier 的獨立性因此成為硬規則而非建議；組內定為只有程式碼要過審，純文件免審；spec 另案 —— 它由 Analyst agent 起草，改為人類讀全文）——這是**改規則，不是改紀錄**，`000-workflow-v1/gates.md` 的事故列保持原樣。版本號依本節「結構變動 +1.0」定為 v2.0 —— 草稿原標 v1.2，由 PR #3 的 Reviewer 指出不符本節規則 |
+| v2.1 | 2026-11-10 | §7 新增例外：自己的 ai-log 可以直接 push 到 `main`，不開 PR；附直接 push 的稽核命令 | 組內同意。PR #6、#7 都只動 ai-log，每次都要開 PR、等對方 approve，成本與內容不成比例。代價是 ai-log 失去對方核對，而 ai-log #12 的結論是 AI 自述要由人核對；組內決定由各自核對自己的紀錄，不另設對方核對 |
