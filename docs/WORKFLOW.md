@@ -1,6 +1,6 @@
 # AI-Agent 組 開發流程（Spec-Driven Development）
 
-**v3.0 · 2026-11-10** — 可滾動修改，見 §11
+**v3.1 · 2026-11-10** — 可滾動修改，見 §11
 
 ## 1. 這份文件
 
@@ -84,6 +84,8 @@ docs/
 | S4 PR | Owner | 依 PR 模板開 PR，貼上 S3 的驗收結果 |
 | **Gate B** | Owner | 自審後 merge |
 | S5 收尾 | Owner | 填 ai-log、補 run 檔、feature 檔 `status: done`、刪 branch |
+
+**測試**：純邏輯（波次推進、狀態轉換、結算計分這類）寫 GUT 單元測試並跑過；手感、UI、視覺走 feature 檔裡的手動驗收條件，由人類實際操作確認。GUT 怎麼裝、怎麼跑見 `TOOLS.md`。
 
 S2 做不下去（plan 有錯、spec 有漏）時**停下來回報**，不要自己改 spec 或 plan 繞過去。
 
@@ -205,3 +207,4 @@ feature 幾乎都含程式碼，所以 S3 實際上一律要審；免審的是�
 | v2.0 | 2026-11-10 | 關卡 3 道→2 道；五個檔併成兩個；檢查表改為單一來源；加文件預算、PR 模板、merge 不 squash、自我稽核命令、diff 核准深度分級、審查 agent | 量測結果：`docs/` 已累積 25,226 字，GDScript 與 spec 各 0 份。原因有三 —— 同一事實被記 4–6 次、固定成本與 feature 大小無關、雜務也開 run 檔。作業要求的四項紀錄一條沒少，砍掉的是重複與儀式。另外人類逐行讀 diff 在文件變更上成本不成比例，改為按變更類型分級，並要求**人類 review 前先由新 session 的審查 agent 審一遍**（把成本從人移到機器，Verifier 的獨立性因此成為硬規則而非建議；組內定為只有程式碼要過審，純文件免審；spec 另案 —— 它由 Analyst agent 起草，改為人類讀全文）——這是**改規則，不是改紀錄**，`000-workflow-v1/gates.md` 的事故列保持原樣。版本號依本節「結構變動 +1.0」定為 v2.0 —— 草稿原標 v1.2，由 PR #3 的 Reviewer 指出不符本節規則 |
 | v2.1 | 2026-11-10 | §7 新增例外：自己的 ai-log 可以直接 push 到 `main`，不開 PR；附直接 push 的稽核命令 | 組內同意。PR #6、#7 都只動 ai-log，每次都要開 PR、等對方 approve，成本與內容不成比例。代價是 ai-log 失去對方核對，而 ai-log #12 的結論是 AI 自述要由人核對；組內決定由各自核對自己的紀錄，不另設對方核對 |
 | v3.0 | 2026-11-10 | 取消 Reviewer 角色：Gate A、Gate B 都由 Owner 自己簽，PR 自審後自己 merge；刪 §10 的「一人不在」；§7 的稽核命令改為查所有直接 push | 組內同意。S2 每個 diff 已由 Owner 核准、含程式碼的還有新 session 的審查 agent，另一人再審一次主要是在等人。代價：spec 與 PR 都只剩一個人讀過，「人與 AI 都誤解 spec」這類錯沒有第二雙眼睛，而審查 agent 和 Implementer 同模型、抓不到（§6）。舊稽核命令查 `reviewDecision`，自審後一律為空，已無意義 |
+| v3.1 | 2026-11-10 | §5 補回測試分界：純邏輯寫 GUT、手感與 UI 走手動驗收 | v1.0 的 S4 有這句，v2.0 瘦身時刪掉、沒搬到別處，但 `SYSTEM.md` S1 仍以「`WORKFLOW.md` §8 要求 GUT」為理由，引用落空。本組已裝 GUT 9.7.1（見 `TOOLS.md`） |
