@@ -9,18 +9,24 @@ var clock := DayClock.new()
 var grid := StationGrid.make_hall()
 var colony := Colony.new()
 var wanderers := {}  # colonist id -> Wanderer
+var board := AssignmentBoard.new(grid)
 
 var _views := {}  # colonist id -> colonist view node
 var _rng := RandomNumberGenerator.new()
 
 @onready var station_map: Node2D = $StationMap
 @onready var hud: CanvasLayer = $Hud
+@onready var assign_menu: Control = $Hud/%AssignMenu
+@onready var context_menu: Control = $Hud/%ContextMenu
 
 
 func _ready() -> void:
 	station_map.grid = grid
 	hud.clock = clock
 	hud.add_colonist_requested.connect(_on_add_colonist_requested)
+	context_menu.assign_chosen.connect(_on_assign_chosen)
+	assign_menu.assign_requested.connect(_on_assign_requested)
+	hud.cancel_task_requested.connect(_on_cancel_task_requested)
 	hud.refresh()
 	station_map.position = ((get_viewport_rect().size - station_map.pixel_size()) / 2.0).round()
 	for colonist in colony.colonists:
@@ -37,18 +43,29 @@ func _process(delta: float) -> void:
 
 
 func _on_add_colonist_requested() -> void:
+	_close_menus()  # the assignment menu's colonist list would be out of date
 	_show_colonist(colony.add_colonist())
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	var click := event as InputEventMouseButton
-	if click == null or not click.pressed or click.button_index != MOUSE_BUTTON_LEFT:
+	if click == null or not click.pressed:
 		return
-	var colonist := colonist_at(station_map.to_local(click.position))
+	var map_point := station_map.to_local(click.position)
+	if click.button_index == MOUSE_BUTTON_RIGHT:
+		_open_context_menu(_cell_at(map_point), click.position)
+		get_viewport().set_input_as_handled()
+		return
+	if click.button_index != MOUSE_BUTTON_LEFT:
+		return
+	_close_menus()
+	var colonist := colonist_at(map_point)
 	if colonist:
-		hud.show_colonist(colonist)
+		hud.show_colonist(colonist, wanderers[colonist.id].tasks)
+		station_map.highlight(wanderers[colonist.id].tasks)
 	else:
 		hud.hide_info()
+		station_map.highlight(null)
 	get_viewport().set_input_as_handled()
 
 
@@ -68,6 +85,7 @@ func colonist_at(map_point: Vector2) -> Colonist:
 func _show_colonist(colonist: Colonist) -> void:
 	var walker := Wanderer.new(grid, _free_floor_cell(), _rng)
 	wanderers[colonist.id] = walker
+	board.register(colonist.id, walker)
 	var view := ColonistView.instantiate()
 	view.colonist = colonist
 	view.position = station_map.cell_to_pixel(walker.position())
@@ -84,3 +102,44 @@ func _free_floor_cell() -> Vector2i:
 	if cells.is_empty():
 		cells = grid.floor_cells()
 	return cells[_rng.randi_range(0, cells.size() - 1)]
+
+
+# --- feature 002: assignments ---
+
+## Right-click: the context menu opens where at least one of its actions
+## applies. Its only action, 指派工作, needs floor someone can reach (R6).
+func _open_context_menu(cell: Vector2i, screen_position: Vector2) -> void:
+	_close_menus()
+	if board.can_assign_at(cell):
+		context_menu.open(cell, screen_position)
+
+
+func _close_menus() -> void:
+	context_menu.close()
+	assign_menu.close()
+
+
+func _on_assign_chosen() -> void:
+	_open_assign_menu(context_menu.cell, context_menu.opened_at)
+
+
+func _open_assign_menu(cell: Vector2i, screen_position: Vector2) -> void:
+	if not board.can_assign_at(cell):
+		assign_menu.close()
+		return
+	var reachable := board.who_can_reach(cell)
+	var people: Array[Colonist] = colony.colonists.filter(func(c): return reachable.has(c.id))
+	assign_menu.open(cell, screen_position, people)
+
+
+func _on_assign_requested(colonist_id: int, priority: int) -> void:
+	board.create(colonist_id, assign_menu.cell, priority)
+	assign_menu.close()
+
+
+func _on_cancel_task_requested(assignment_id: int) -> void:
+	board.cancel(assignment_id)
+
+
+func _cell_at(map_point: Vector2) -> Vector2i:
+	return Vector2i((map_point / station_map.CELL_SIZE).floor())

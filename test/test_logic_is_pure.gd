@@ -24,3 +24,10 @@ func test_colonist_is_not_a_node():
 
 func test_station_grid_is_not_a_node():
 	_assert_pure(StationGrid.new(Vector2i(3, 3)))
+
+
+func test_feature_002_classes_are_not_nodes():
+	_assert_pure(Assignment.new(1, Vector2i.ZERO, 1))
+	_assert_pure(TaskQueue.new())
+	_assert_pure(AssignmentBoard.new(StationGrid.new(Vector2i(3, 3))))
+	_assert_pure(Wanderer.new(StationGrid.new(Vector2i(3, 3)), Vector2i.ZERO))

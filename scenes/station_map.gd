@@ -8,11 +8,45 @@ const CELL_SIZE := 32.0
 const FLOOR_COLOR := Color(0.16, 0.18, 0.22)
 const WALL_COLOR := Color(0.55, 0.58, 0.64)
 const LINE_COLOR := Color(0.24, 0.27, 0.32)
+const MARK_COLOR := Color(1.0, 0.85, 0.35)
+const MARK_FONT_SIZE := 12
 
 var grid: StationGrid:
 	set(value):
 		grid = value
 		queue_redraw()
+
+var _highlighted: TaskQueue  # the selected colonist's tasks, or null
+var _markers := Node2D.new()  # drawn above the floor, below the colonists
+
+
+func _ready() -> void:
+	_markers.draw.connect(_draw_markers)
+	add_child(_markers)
+	move_child(_markers, 0)
+
+
+func _process(_delta: float) -> void:
+	if _highlighted:
+		_markers.queue_redraw()  # tasks finish and move on while selected
+
+
+## Mark the cells of one colonist's tasks (feature 002, I7); null clears.
+func highlight(tasks: TaskQueue) -> void:
+	_highlighted = tasks
+	_markers.queue_redraw()
+
+
+## What is marked now, current task first: [{cell, priority, current}].
+func marked_cells() -> Array:
+	var marks := []
+	if _highlighted == null:
+		return marks
+	if _highlighted.current:
+		marks.append(_mark(_highlighted.current, true))
+	for task in _highlighted.queued():
+		marks.append(_mark(task, false))
+	return marks
 
 
 func pixel_size() -> Vector2:
@@ -58,3 +92,22 @@ func _is_drawn(cell: Vector2i) -> bool:
 
 func _cell_rect(cell: Vector2i) -> Rect2:
 	return Rect2(Vector2(cell) * CELL_SIZE, Vector2(CELL_SIZE, CELL_SIZE))
+
+
+func _mark(task: Assignment, is_current: bool) -> Dictionary:
+	return {"cell": task.cell, "priority": task.priority, "current": is_current}
+
+
+## Solid frame for the task being done, dashed for queued ones, priority in the corner.
+func _draw_markers() -> void:
+	var font := ThemeDB.fallback_font
+	for mark in marked_cells():
+		var rect := _cell_rect(mark.cell).grow(-2.0)
+		if mark.current:
+			_markers.draw_rect(rect, MARK_COLOR, false, 2.0)
+		else:
+			var corners := [rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]
+			for i in 4:
+				_markers.draw_dashed_line(corners[i], corners[(i + 1) % 4], MARK_COLOR, 2.0, 4.0)
+		_markers.draw_string(font, rect.position + Vector2(3, MARK_FONT_SIZE), str(mark.priority),
+			HORIZONTAL_ALIGNMENT_LEFT, -1, MARK_FONT_SIZE, MARK_COLOR)

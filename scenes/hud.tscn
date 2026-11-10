@@ -1,6 +1,8 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scenes/hud.gd" id="1_hud"]
+[ext_resource type="PackedScene" path="res://scenes/assign_menu.tscn" id="2_menu"]
+[ext_resource type="PackedScene" path="res://scenes/context_menu.tscn" id="3_context"]
 
 [node name="Hud" type="CanvasLayer"]
 script = ExtResource("1_hud")
@@ -69,6 +71,10 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
 
+[node name="InfoTasks" type="VBoxContainer" parent="InfoPanel/InfoBox"]
+unique_name_in_owner = true
+layout_mode = 2
+
 [node name="DebugBar" type="HBoxContainer" parent="."]
 offset_left = 24.0
 offset_top = 1024.0
@@ -92,3 +98,9 @@ unique_name_in_owner = true
 focus_mode = 0
 layout_mode = 2
 text = "加殖民者"
+
+[node name="AssignMenu" parent="." instance=ExtResource("2_menu")]
+unique_name_in_owner = true
+
+[node name="ContextMenu" parent="." instance=ExtResource("3_context")]
+unique_name_in_owner = true
