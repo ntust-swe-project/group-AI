@@ -137,3 +137,36 @@ func test_setting_speed_below_half_stops_at_half():
 func test_setting_speed_off_step_snaps_to_nearest_half():
 	clock.speed = 3.7
 	assert_eq(clock.speed, 3.5)
+
+
+# T8 — debug "next day" (A10)
+func test_skip_day_moves_to_the_next_day():
+	clock.skip_day()
+	assert_eq(clock.day, 2)
+
+
+func test_skip_day_starts_the_new_day_from_its_beginning():
+	clock.advance(DAY * 0.75)
+	clock.skip_day()
+	clock.advance(DAY * 0.5)
+	assert_eq(clock.day, 2)
+
+
+func test_skip_day_works_while_paused():
+	clock.paused = true
+	clock.skip_day()
+	assert_eq(clock.day, 2)
+
+
+func test_skipping_day_thirty_finishes_the_run():
+	clock.advance(DAY * 29)
+	clock.skip_day()
+	assert_eq(clock.day, 30)
+	assert_true(clock.is_finished())
+
+
+func test_skip_day_does_nothing_after_the_run_is_over():
+	clock.advance(DAY * 30)
+	clock.skip_day()
+	assert_eq(clock.day, 30)
+	assert_true(clock.is_finished())

@@ -68,3 +68,27 @@ text = "殖民者"
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
+
+[node name="DebugBar" type="HBoxContainer" parent="."]
+offset_left = 24.0
+offset_top = 1024.0
+offset_right = 424.0
+offset_bottom = 1064.0
+theme_override_constants/separation = 12
+
+[node name="DebugLabel" type="Label" parent="DebugBar"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "除錯"
+
+[node name="NextDayButton" type="Button" parent="DebugBar"]
+unique_name_in_owner = true
+focus_mode = 0
+layout_mode = 2
+text = "下一天"
+
+[node name="AddColonistButton" type="Button" parent="DebugBar"]
+unique_name_in_owner = true
+focus_mode = 0
+layout_mode = 2
+text = "加殖民者"

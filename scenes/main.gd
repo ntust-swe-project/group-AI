@@ -20,6 +20,7 @@ var _rng := RandomNumberGenerator.new()
 func _ready() -> void:
 	station_map.grid = grid
 	hud.clock = clock
+	hud.add_colonist_requested.connect(_on_add_colonist_requested)
 	hud.refresh()
 	station_map.position = ((get_viewport_rect().size - station_map.pixel_size()) / 2.0).round()
 	for colonist in colony.colonists:
@@ -33,6 +34,10 @@ func _process(delta: float) -> void:
 	for id in wanderers:
 		wanderers[id].advance(game_seconds)
 		_views[id].position = station_map.cell_to_pixel(wanderers[id].position())
+
+
+func _on_add_colonist_requested() -> void:
+	_show_colonist(colony.add_colonist())
 
 
 func _unhandled_input(event: InputEvent) -> void:

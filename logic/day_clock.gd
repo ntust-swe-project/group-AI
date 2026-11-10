@@ -34,6 +34,18 @@ func advance(real_seconds: float) -> void:
 		day += 1
 
 
+## Debug (feature 001, R10): jump to the start of the next day, even while
+## paused. Skipping the final day ends the run.
+func skip_day() -> void:
+	if _finished:
+		return
+	_seconds_into_day = 0.0
+	if day == FINAL_DAY:
+		_finished = true
+	else:
+		day += 1
+
+
 ## True once the final day has fully passed (R2: survive day 30, not just reach it).
 func is_finished() -> bool:
 	return _finished
