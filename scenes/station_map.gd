@@ -10,10 +10,19 @@ const WALL_COLOR := Color(0.55, 0.58, 0.64)
 const LINE_COLOR := Color(0.24, 0.27, 0.32)
 const MARK_COLOR := Color(1.0, 0.85, 0.35)
 const MARK_FONT_SIZE := 12
+const SUPPLY_COLOR := Color(0.45, 0.8, 0.95)
+const SUPPLY_FONT_SIZE := 16
+## What each supply point shows on the map (feature 003, A10).
+const SUPPLY_LABELS := {&"hunger": "食", &"thirst": "水", &"relief": "廁", &"stamina": "睡"}
 
 var grid: StationGrid:
 	set(value):
 		grid = value
+		queue_redraw()
+
+var supply_points: SupplyPoints:
+	set(value):
+		supply_points = value
 		queue_redraw()
 
 var _highlighted: TaskQueue  # the selected colonist's tasks, or null
@@ -49,6 +58,15 @@ func marked_cells() -> Array:
 	return marks
 
 
+## The supply points as drawn: {cell: label}. Empty until they are set.
+func supply_labels() -> Dictionary:
+	var labels := {}
+	if supply_points:
+		for need in SupplyPoints.NEEDS:
+			labels[supply_points.cell_for(need)] = SUPPLY_LABELS[need]
+	return labels
+
+
 func pixel_size() -> Vector2:
 	return Vector2(grid.size) * CELL_SIZE if grid else Vector2.ZERO
 
@@ -70,6 +88,19 @@ func _draw() -> void:
 				StationGrid.Cell.WALL:
 					draw_rect(_cell_rect(cell), WALL_COLOR)
 	_draw_grid_lines()
+	_draw_supply_points()
+
+
+## A thin frame and one character per supply point, under the task markers.
+func _draw_supply_points() -> void:
+	var font := ThemeDB.fallback_font
+	var labels := supply_labels()
+	for cell in labels:
+		var rect := _cell_rect(cell)
+		draw_rect(rect.grow(-4.0), SUPPLY_COLOR, false, 1.0)
+		var baseline := rect.position + Vector2(0, (CELL_SIZE + SUPPLY_FONT_SIZE) / 2.0 - 2.0)
+		draw_string(font, baseline, labels[cell], HORIZONTAL_ALIGNMENT_CENTER, CELL_SIZE,
+			SUPPLY_FONT_SIZE, SUPPLY_COLOR)
 
 
 ## Each cell edge is drawn once. Width -1 draws a thin line that stays one
