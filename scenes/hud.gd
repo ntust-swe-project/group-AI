@@ -1,15 +1,24 @@
 extends CanvasLayer
 
-## Day counter and time controls (feature 001, R1, R8).
+## Day counter and time controls (feature 001, R1, R8), and the info panel for
+## the selected colonist: name, needs and tasks (features 001-003).
 
 signal add_colonist_requested
 signal cancel_task_requested(task_id: int)
 
 const TASK_FONT_SIZE := 14
 
+## The needs as the panel lists them, named as in SYSTEM.md §2 (feature 003, R5).
+## Body and mind stay two lists, shown in two sections (SC2).
+const BODY_NEEDS := [[&"hunger", "吃"], [&"thirst", "喝"], [&"body_temp", "體溫"], [&"relief", "排泄"], [&"stamina", "體力"]]
+const MIND_NEEDS := [[&"stress", "壓力"], [&"mood", "心情"]]
+## How supply work is listed in the queue instead of a cell (I7), named as in R7.
+const SUPPLY_NAMES := {&"hunger": "食物補給站", &"thirst": "水補給站", &"relief": "廁所", &"stamina": "睡眠艙"}
+
 var clock: DayClock
 
-var _shown_tasks: TaskQueue  # the colonist in the info panel, if any
+var _shown_colonist: Colonist  # the colonist in the info panel, if any
+var _shown_tasks: TaskQueue  # their tasks
 var _shown_signature := []  # what the task rows show now; rebuilt only when it changes
 
 
@@ -23,6 +32,8 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	refresh()
+	if %InfoPanel.visible and _shown_colonist:
+		_update_needs()
 	if %InfoPanel.visible and _shown_tasks:
 		_update_task_rows()
 
@@ -38,10 +49,13 @@ func refresh() -> void:
 	%PauseButton.text = "繼續" if clock.paused else "暫停"
 
 
-## Info panel: the name (feature 001, R9) and the tasks, each with a cancel
+## Info panel: the name (feature 001, R9), the needs in two sections and an
+## incapacitated mark (feature 003, R5, R10), and the tasks, each with a cancel
 ## button (feature 002, R8, I8).
 func show_colonist(colonist: Colonist, tasks: TaskQueue = null) -> void:
 	%InfoName.text = colonist.name
+	_shown_colonist = colonist
+	_update_needs()
 	_shown_tasks = tasks
 	_shown_signature = [null]  # force a rebuild
 	_update_task_rows()
@@ -49,6 +63,7 @@ func show_colonist(colonist: Colonist, tasks: TaskQueue = null) -> void:
 
 
 func hide_info() -> void:
+	_shown_colonist = null
 	_shown_tasks = null
 	%InfoPanel.visible = false
 
@@ -61,6 +76,33 @@ func info_tasks_text() -> String:
 	return "\n".join(lines)
 
 
+func _update_needs() -> void:
+	%InfoBody.text = _needs_text(_shown_colonist.physiology, BODY_NEEDS)
+	%InfoMind.text = _needs_text(_shown_colonist.psychology, MIND_NEEDS)
+	%InfoStatus.visible = _shown_colonist.incapacitated
+
+
+func _needs_text(source: Object, needs: Array) -> String:
+	var lines: Array[String] = []
+	for need in needs:
+		lines.append("%s %d" % [need[1], _shown_value(source.get(need[0]))])
+	return "\n".join(lines)
+
+
+## Rounded, except that a line the game acts on is shown only once really
+## crossed: 0 and 100 are where a colonist breaks down (R8), and under 30 a need
+## counts as low (R4, R6), so 29.6 shows 29, not 30.
+func _shown_value(value: float) -> int:
+	var shown := roundi(value)
+	if shown == 0 and value > 0.0:
+		return 1
+	if shown == 100 and value < 100.0:
+		return 99
+	if shown == int(Physiology.LOW) and value < Physiology.LOW:
+		return shown - 1
+	return shown
+
+
 func _update_task_rows() -> void:
 	var signature := _signature(_shown_tasks)
 	if signature == _shown_signature:
@@ -70,6 +112,11 @@ func _update_task_rows() -> void:
 		%InfoTasks.remove_child(child)
 		child.queue_free()
 	if _shown_tasks == null:
+		return
+	if _shown_colonist and _shown_colonist.incapacitated:
+		# Every task was cancelled and they cannot move: not wandering (R8, R10).
+		_add_label("正在做：無（失能）")
+		_add_label("排隊：無")
 		return
 	if _shown_tasks.current:
 		_add_label("正在做：")
@@ -86,7 +133,7 @@ func _update_task_rows() -> void:
 
 
 func _signature(tasks: TaskQueue) -> Array:
-	var ids := []
+	var ids := [_shown_colonist != null and _shown_colonist.incapacitated]
 	if tasks:
 		ids.append(tasks.current.id if tasks.current else -1)
 		for task in tasks.queued():
@@ -106,7 +153,8 @@ func _add_task_row(task: Assignment) -> void:
 	var row := HBoxContainer.new()
 	%InfoTasks.add_child(row)
 	var label := Label.new()
-	label.text = "  (%d, %d) · 優先度 %d" % [task.cell.x, task.cell.y, task.priority]
+	var what := ("前往%s" % SUPPLY_NAMES[task.need]) if task.need != &"" else ("(%d, %d)" % [task.cell.x, task.cell.y])
+	label.text = "  %s · 優先度 %d" % [what, task.priority]
 	label.add_theme_font_size_override("font_size", TASK_FONT_SIZE)
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(label)
