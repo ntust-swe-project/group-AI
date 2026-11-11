@@ -1,7 +1,7 @@
 ---
 feature: 003-colonist-needs
 owner: 組員 B
-status: approved                      # draft | approved | done
+status: done           # draft | approved | done
 vision-refs: ["3.1", "3.2"]
 ---
 
@@ -131,7 +131,7 @@ Owner：組員 B　日期：2026-11-11　結果：核准（第 5 次，重簽 ch
 
 ## Gate B — merge 前
 
-PR：#__　Owner 自審日期：____　退回次數：__
+PR：#18　Owner 自審日期：2026-11-11　退回次數：0
 
 ## 驗收結果
 
