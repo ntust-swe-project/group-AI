@@ -143,3 +143,43 @@ func test_adding_the_same_assignment_twice_is_ignored():
 	assert_eq(queue.queued().size(), 0)
 	queue.cancel(a.id)
 	assert_null(queue.current)
+
+
+# --- feature 004 R5: build jobs never wait in a queue ---
+
+func _build(priority: int) -> Assignment:
+	var task := _task(priority)
+	task.facility_id = 7
+	return task
+
+
+func test_a_build_pushed_aside_is_dropped_not_queued():
+	var build := _build(3)
+	queue.add(build)
+	var urgent := _task(5)
+	assert_true(queue.add(urgent))
+	assert_same(queue.current, urgent)
+	assert_eq(queue.queued().size(), 0)
+
+
+func test_an_ordinary_task_pushed_aside_still_waits():
+	var errand := _task(3)
+	queue.add(errand)
+	queue.add(_build(4))
+	assert_eq(queue.queued(), [errand] as Array[Assignment])
+
+
+func test_a_build_that_is_not_more_urgent_is_not_queued():
+	var errand := _task(3)
+	queue.add(errand)
+	assert_false(queue.add(_build(3)))
+	assert_same(queue.current, errand)
+	assert_eq(queue.queued().size(), 0)
+
+
+func test_next_priority_is_the_first_waiting_task():
+	assert_eq(queue.next_priority(), 0)
+	queue.add(_task(5))
+	queue.add(_task(2))
+	queue.add(_task(4))
+	assert_eq(queue.next_priority(), 4)

@@ -59,6 +59,26 @@ func create(colonist_id: int, cell: Vector2i, priority: int, need: StringName = 
 	return task
 
 
+## Gives colonist `colonist_id` a build job for blueprint `facility_id`,
+## standing at `cell`. Only when it is more urgent than what they do now, so it
+## becomes their current task at once (feature 004, R5); otherwise null.
+## Construction has already checked that they can walk to `cell`.
+func create_build(colonist_id: int, cell: Vector2i, priority: int, facility_id: int) -> Assignment:
+	var walker: Wanderer = _walkers.get(colonist_id)
+	if walker == null or priority <= walker.tasks.current_priority():
+		return null
+	var task := Assignment.new(_next_id, cell, priority)
+	task.facility_id = facility_id
+	_next_id += 1
+	walker.assign(task)
+	return task
+
+
+## Colonist id -> Wanderer for everyone registered, in the order they joined. A copy.
+func walkers() -> Dictionary:
+	return _walkers.duplicate()
+
+
 ## Returns false if no colonist has an assignment with that id.
 func cancel(assignment_id: int) -> bool:
 	var colonist_id := owner_of(assignment_id)

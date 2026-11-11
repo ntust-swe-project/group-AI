@@ -3,7 +3,9 @@ extends RefCounted
 
 ## Moves one colonist. With nothing to do it wanders: pick a random floor cell,
 ## walk there, repeat (feature 001, I1). With assignments it walks to the
-## current one and works there (feature 002). Pure logic; time is game time.
+## current one and works there (feature 002). A build job (feature 004) is not
+## timed here: the colonist stays at work until Construction says it is done.
+## Pure logic; time is game time.
 
 ## Walking speed in cells per game second. Placeholder until seen on screen.
 const CELLS_PER_SECOND := 2.0
@@ -55,6 +57,8 @@ func advance(seconds: float) -> Array[Assignment]:
 				tasks.cancel(task.id)
 				_start_current()
 				continue
+			if task.is_build():
+				return done  # building; Construction counts the time
 			var used := minf(time_left, task.work_seconds - _worked)
 			_worked += used
 			time_left -= used
@@ -74,6 +78,40 @@ func advance(seconds: float) -> Array[Assignment]:
 			cell = _path.pop_front()
 			_progress = 0.0
 	return done
+
+
+## True while standing at the current build job's cell.
+func is_working() -> bool:
+	var task := tasks.current
+	return task != null and task.is_build() and _path.is_empty() and cell == task.cell
+
+
+## The current task is done (Construction finished the build): start the next.
+func complete_current() -> void:
+	if tasks.current:
+		tasks.complete()
+		_start_current()
+
+
+## Stand on `target` at once, then carry on (moved off a finished facility, R7).
+func move_to(target: Vector2i) -> void:
+	cell = target
+	_path = []
+	_progress = 0.0
+	replan()
+
+
+## The map changed (a facility was finished or removed): find a new route to
+## the current task, or to a new wandering spot. Work done is kept. A step
+## into a cell that is now blocked is taken back.
+func replan() -> void:
+	if not _path.is_empty() and _progress > 0.0 and not _grid.is_walkable(_path[0]):
+		_progress = 0.0
+		_path = []
+	if tasks.current:
+		_route_to(tasks.current.cell)
+	elif _path.any(func(c: Vector2i) -> bool: return not _grid.is_walkable(c)):
+		_path = [_path[0]] if _progress > 0.0 else ([] as Array[Vector2i])
 
 
 ## Position in cells, between two cells while walking.
@@ -140,7 +178,7 @@ func _steps_from(from: Vector2i, to: Vector2i) -> Array[Vector2i]:
 
 
 func _pick_new_destination() -> void:
-	var candidates := _grid.floor_cells()
+	var candidates := _grid.walkable_cells()
 	candidates.erase(cell)
 	if candidates.is_empty():
 		return
