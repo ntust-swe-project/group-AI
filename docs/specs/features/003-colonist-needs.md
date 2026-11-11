@@ -1,7 +1,7 @@
 ---
 feature: 003-colonist-needs
 owner: 組員 B
-status: approved             # draft | approved | done
+status: approved                # draft | approved | done
 vision-refs: ["3.1", "3.2"]
 ---
 
@@ -23,7 +23,7 @@ vision-refs: ["3.1", "3.2"]
 | R2 | 需求隨遊戲時間變化，暫停時不變、倍速時照比例。從最好到最差：`Thirst` 1 天、`Hunger` 1.5 天、`Relief` 1 天；`BodyTemp` 不變 | `SYSTEM.md` `Day`、SC7；Q2 |
 | R3 | `Stamina` 手上有工作（玩家指派或補給工作，含在食物、水、廁所補給點待著）時下降，1 天降完全程；在睡眠艙睡覺與沒有工作（閒晃、失能）時不變。只有睡滿睡眠艙才回到 100（R7） | I4；組內 2026-11-11（Owner 修改） |
 | R4 | `Mood` 在任一條生理需求低於 30 時下降、否則回升；`Stress` 在做玩家指派時上升、否則下降；各 1 天走完全程 | Q10；I2、I3 |
-| R5 | 點殖民者時，資訊面板把生理與心理分成兩區顯示，不合併成單一指標 | `SYSTEM.md` SC2；訪談 Q2 |
+| R5 | 點殖民者時，資訊面板把生理與心理分成兩區顯示，不合併成單一指標；佇列中的補給工作顯示名稱（例如「補給：水」），玩家指派照 002 顯示格子 | `SYSTEM.md` SC2；訪談 Q2；I7 |
 | R6 | `Hunger`、`Thirst`、`Relief`、`Stamina` 低於 30 時，殖民者**自己**產生一件優先度 3 的補給工作，排進自己的待辦佇列（沿用 002 的佇列與搶占）；同一條需求同時只有一件 | `VISION.md` §3.2；組內 2026-11-11；Q3、Q4 |
 | R7 | 大廳有 4 個補給點：食物、水、廁所、睡眠艙，各補一條需求。走到後待滿時間（睡眠艙 60 秒，其餘 2 秒遊戲時間），該需求回到 100 | I1；Q5、Q6、Q11 |
 | R8 | 任一條生理需求到 0、`Stress` 到 100 或 `Mood` 到 0 時進入 `Incapacitated`：不移動、不接新指派、不列在指派子選單，手上與佇列裡的指派全部取消。失能不會恢復 | `SYSTEM.md` `Incapacitated`；訪談 Q8；Q7–Q9 |
@@ -43,7 +43,7 @@ vision-refs: ["3.1", "3.2"]
 | A6 | 三種失能條件各觸發一次：失能後不移動、指派全部取消、建立指派失敗、不在可指派名單 | R8 | GUT |
 | A7 | 失能中只有 `Hunger` 或只有 `Thirst` 到 0 時還活著；兩條都到 0 時 `Colony` 少了他，其他殖民者不受影響 | R9 | GUT |
 | A8 | 需求、補給、失能相關的邏輯 class 都不是 `Node` | R11 | GUT |
-| A9 | 執行遊戲：點殖民者，面板分「生理」「心理」兩區列出七條需求，數值隨時間改變；暫停時不動 | R2、R5 | 手動 |
+| A9 | 執行遊戲：點殖民者，面板分「生理」「心理」兩區列出七條需求，數值隨時間改變；暫停時不動；他去補給時，佇列顯示「補給：」加補給點名稱 | R2、R5 | 手動 |
 | A10 | 執行遊戲：地圖上看得到 4 個補給點；不給任何指派，殖民者在需求變低後自己走去對應補給點，之後該需求回到 100 | R6、R7 | 手動 |
 | A11 | 執行遊戲：持續下 4 級指派讓某人沒空補給，他失能後換顏色、面板標「失能」；之後死亡並從地圖消失 | R8–R10 | 手動 |
 
@@ -81,13 +81,14 @@ Q1–Q10 由 AI 提建議、Owner 於 2026-11-11 全部採用；Q5 於 Gate A �
 | I4 | `Stamina` 走路與工作時下降、閒晃時回升，不需要補給點 | INV | 修改後納入（R3） | Owner 改了兩次：閒晃本身就在走路，「走路降、閒晃升」會矛盾，先改為依「有沒有工作」判斷；Gate A 後再改為只有睡眠艙能回（Changelog 第 2 列），原理由「少一個補給點」不再成立 |
 | I5 | 失能的殖民者在地圖上換顏色，面板標「失能」 | INV | 納入（R10） | 手動驗收要看得出誰失能 |
 | I6 | 死亡的殖民者從地圖上消失，名字不再被新殖民者重用 | INV | 部分納入（R9） | 消失納入；名字不重用不納入：要另外記誰死過，沒有需求要它 |
+| I7 | 佇列中的補給工作顯示「補給：水」這類名稱，不顯示格子座標（T5 實作時提出） | INV | 納入（R5） | 只看座標，玩家看不出殖民者要去做什麼（Changelog 第 3 列） |
 
 ## Plan
 
 ### 方案
 
-- **純邏輯**：`Physiology`（五條）與 `Psychology`（兩條）是兩個 class，資料層就不合併（SC2）。速率由「幾天走完全程」換算，天長沿用 `DayClock.SECONDS_PER_DAY`。`Stamina` 只看呼叫端傳入的「是否在工作」：有工作（含去補給、在食物／水／廁所待著）就降，睡覺或沒事不變。`Colonist` 帶這兩個物件與 `incapacitated`。新增 `ColonistCare` 每幀依序推進：走路 → 需求 → 低於 30 經 `AssignmentBoard` 建補給工作 → 做完就補滿 → 判定失能、死亡。補給工作沿用 `Assignment`，多 `need` 欄位（玩家指派為空）與工作秒數（預設 2，睡眠艙 60；`Wanderer` 改讀它），佇列與搶占全沿用 002。`Wanderer.advance()` 改為回傳這次做完的工作，用來分辨「做完」與「被取消」。
-- **失能**：取消全部指派、從 `AssignmentBoard` 註銷，建立指派就會失敗、子選單也不列，不必改 002 的選單。**死亡**：`Colony.remove_colonist()`，`main.gd` 移除圓點。**補給點**：`SupplyPoints` 固定在大廳中線左、中、右約 `(14,15)`、`(28,15)`、`(42,15)`，睡眠艙在中上約 `(28,8)`，測試確認是地板。**畫面**：地圖在補給點標「食／水／廁／睡」；失能者圓點換灰色；資訊面板名字下加「生理」「心理」兩區與「失能」標示。沒採用：七條放同一個 `Needs` class（違反 SC2）；補給另開一套佇列（會和 002 的搶占打架）。已知行為：玩家在面板取消補給工作，下一次推進會再產生（需求仍低於 30）；「下一天」鈕只跳日期、不推進需求，和 001 殖民者的移動一致。
+- **純邏輯**：`Physiology`（五條）與 `Psychology`（兩條）是兩個 class，資料層就不合併（SC2）。速率由「幾天走完全程」換算，天長沿用 `DayClock.SECONDS_PER_DAY`。`Stamina` 只看呼叫端傳入的「是否在工作」：有工作（含去補給、在食物／水／廁所待著）就降，睡覺或沒事不變。`Colonist` 帶這兩個物件與 `incapacitated`。新增 `ColonistCare` 每幀依序推進：需求依這一幀開始時在做什麼變化 → 判定失能、死亡 → 走路與工作 → 做完的補給補滿 → 低於 30 經 `AssignmentBoard` 建補給工作（先補滿再檢查，才不會重複建立）。補給工作沿用 `Assignment`，多 `need` 欄位（玩家指派為空）與工作秒數（預設 2，睡眠艙 60；`Wanderer` 改讀它），佇列與搶占全沿用 002。`Wanderer.advance()` 改為回傳這次做完的工作，用來分辨「做完」與「被取消」。
+- **失能**：取消全部指派、從 `AssignmentBoard` 註銷，建立指派就會失敗、子選單也不列，不必改 002 的選單。**死亡**：`Colony.remove_colonist()`，`main.gd` 移除圓點、關閉選單，面板正顯示他時一併關閉。**補給點**：`SupplyPoints` 固定在大廳中線左、中、右約 `(14,15)`、`(28,15)`、`(42,15)`，睡眠艙在中上約 `(28,8)`，測試確認是地板。**畫面**：地圖在補給點標「食／水／廁／睡」；失能者圓點換灰色；資訊面板名字下加「生理」「心理」兩區與「失能」標示，佇列中的補給工作顯示名稱（I7）。沒採用：七條放同一個 `Needs` class（違反 SC2）；補給另開一套佇列（會和 002 的搶占打架）。已知行為：玩家在面板取消補給工作，下一次推進會再產生（需求仍低於 30）；「下一天」鈕只跳日期、不推進需求，和 001 殖民者的移動一致；睡到一半被急件打斷要重睡 60 秒（沿用 002 的計時歸零）；選單開著時有人失能，要重開選單才更新（選了也只是指派失敗）。
 
 ### 要動的檔案
 
@@ -96,17 +97,15 @@ Q1–Q10 由 AI 提建議、Owner 於 2026-11-11 全部採用；Q5 於 Gate A �
 | `logic/physiology.gd`、`psychology.gd`、`supply_points.gd`、`colonist_care.gd` | 新增 | 需求數值、補給點、每幀推進與失能死亡 |
 | `logic/colonist.gd`、`assignment.gd`、`colony.gd`、`assignment_board.gd`、`wanderer.gd` | 修改 | 帶需求、`need` 與工作秒數、移除殖民者、註銷、依工作秒數計時並回傳做完的工作 |
 | `scenes/main.gd`、`station_map.gd`、`colonist_view.gd`、`hud.tscn`／`.gd` | 修改 | 改由 `ColonistCare` 推進、補給點、失能顏色、面板兩區 |
-| `test/test_physiology.gd`、`test_psychology.gd`、`test_colonist_care.gd` 新增；`test_logic_is_pure.gd`、`test_info_panel.gd`、`test_main_scene.gd` 修改 | 新增／修改 | A1–A8；A9–A11 的接線 |
+| `test/test_physiology.gd`、`test_psychology.gd`、`test_colonist_care.gd` 新增；`test_logic_is_pure.gd`、`test_wanderer.gd`、`test_info_panel.gd`、`test_main_scene.gd` 修改 | 新增／修改 | A1–A8；A9–A11 的接線 |
 
 動到 `project.godot` 共用欄位嗎：否
 
 ### 引擎 API 驗證
 
-對本機 Godot 4.7.2 `--dump-extension-api` 核對（2026-11-11）。本 feature 沒有新 API，用到的都已在 001、002 驗證。
-
 | API | 狀態 | 文件連結 |
 | --- | --- | --- |
-| `CanvasItem.draw_circle()`、`draw_rect()`、`queue_redraw()`（001）；`draw_string()`、`ThemeDB.get_fallback_font()`、`Label`、`VBoxContainer`、`Node.queue_free()`（002） | 已驗證 | `docs.godotengine.org/en/4.7/classes/class_canvasitem.html` |
+| `CanvasItem.draw_circle()`、`draw_rect()`、`queue_redraw()`（001）；`draw_string()`、`ThemeDB.get_fallback_font()`、`Label`、`VBoxContainer`、`Node.queue_free()`（002） | 已驗證（2026-11-11 對本機 4.7.2 `--dump-extension-api` 核對；本 feature 沒有新 API） | `docs.godotengine.org/en/4.7/classes/class_canvasitem.html` |
 
 ### Tasks
 
@@ -115,11 +114,11 @@ Q1–Q10 由 AI 提建議、Owner 於 2026-11-11 全部採用；Q5 於 Gate A �
 - [ ] **T3** — `Assignment.need` 與工作秒數、`SupplyPoints`、`ColonistCare`：產生補給工作（不重複）、做完補滿 ／ 驗收：A4、A5
 - [ ] **T4** — 失能（取消指派、註銷）與死亡（`Colony.remove_colonist()`）；純度測試 ／ 驗收：A6、A7、A8
 - [ ] **T5** — `main.gd` 改用 `ColonistCare`、死亡移除圓點；地圖畫補給點；失能換色 ／ 驗收：A10、A11
-- [ ] **T6** — 資訊面板分生理／心理兩區、標「失能」 ／ 驗收：A9、A11
+- [ ] **T6** — 資訊面板分生理／心理兩區、標「失能」、補給工作顯示名稱 ／ 驗收：A9、A11
 
 ## Gate A — 實作前核准
 
-Owner：組員 B　日期：2026-11-11　結果：核准（第 2 次，重簽 changelog 第 2 列的 `Stamina` 規則調整）
+Owner：組員 B　日期：2026-11-11　結果：核准（第 3 次，重簽 changelog 第 3 列的補給工作佇列顯示名稱、Plan 同步實作）
 
 - [x] Owner 讀過 feature 檔全文（不是摘要）
 - [x] 每條需求追得到來源；追不到的已標 `INV` 並決定去留
@@ -131,7 +130,7 @@ Owner：組員 B　日期：2026-11-11　結果：核准（第 2 次，重簽 ch
 
 看了什麼、注意到什麼（一到三句，不要只打勾）：
 
-看了 `003-colonist-needs.md` 第二次的 diff，針對 Stamina 規則邏輯修改，注意到若在補給時不下降需要多做狀態，所以採用 AI 建議把在補給也算工作；睡覺秒數不採 AI 建議（10 秒），認為現實裡睡覺佔一天 20–30%，所以才選擇 60 秒。
+看了 `003-colonist-needs.md` 第 3 次的 diff，對佇列裡補給工作的顯示方式進行修改，以及 Plan 同步 AI 建議的 ColonistCare 的實際順序、死亡時關閉選單和面板，注意到若佇列裡有補給工作，會顯示補給站座標，玩家不易察覺工作內容，所以採用 AI 建議把顯示方式改為補給工作名稱；AI 發現 Plan 的 ColonistCare 的順序原本會造成重複建補給工作，所以採用 AI 建議把順序與實作同步。
 
 ## Gate B — merge 前
 
@@ -148,3 +147,4 @@ PR：#__　Owner 自審日期：____　退回次數：__
 | --- | --- | --- |
 | 2026-11-11 | 初版 | 立項 |
 | 2026-11-11 | `Stamina` 只有睡滿睡眠艙（60 秒）才回到 100，閒晃不變、在其他補給點待著照工作下降；低於 30 時自己去睡；補給點增為 4 個；新增 Q11 | Owner 於 T2 審 diff 時決定：只有睡覺能回體力 |
+| 2026-11-11 | R5、A9 加上補給工作在佇列顯示名稱（I7）；Plan 同步 T3–T5 的實作：`ColonistCare` 的推進順序、死亡時關閉選單與面板、`test_wanderer.gd`、兩項已知行為 | Owner 於 T6 前決定採用 I7；T3 審查指出 Plan 的順序與實作不同，實作的順序才不會重複建立補給工作 |
