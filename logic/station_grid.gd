@@ -111,6 +111,34 @@ func is_walkable(cell: Vector2i) -> bool:
 	return is_floor(cell) and not is_blocked(cell)
 
 
+## The walkable cell closest to `from` by sideways steps over floor (blocked
+## floor may be crossed on the way). `from` itself if it is walkable, and
+## `from` as well if no walkable floor touches it.
+func nearest_walkable(from: Vector2i) -> Vector2i:
+	if is_walkable(from):
+		return from
+	var seen := {from: true}
+	var todo: Array[Vector2i] = [from]
+	var i := 0
+	while i < todo.size():
+		var cell := todo[i]
+		i += 1
+		for d in _SIDES:
+			var next := cell + d
+			if seen.has(next) or not is_floor(next):
+				continue
+			if is_walkable(next):
+				return next
+			seen[next] = true
+			todo.append(next)
+	return from
+
+
+## Floor cells nothing blocks.
+func walkable_cells() -> Array[Vector2i]:
+	return floor_cells().filter(func(c: Vector2i) -> bool: return not is_blocked(c))
+
+
 ## True if also blocking `cells` would leave some walkable floor cut off from
 ## the rest of the floor it can reach now. Cells already blocked are ignored.
 ## Floor that was never joined (two rooms with no corridor) is not a split.

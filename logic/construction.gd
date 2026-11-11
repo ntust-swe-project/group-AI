@@ -11,6 +11,7 @@ extends RefCounted
 
 const DEFAULT_PRIORITY := 3  # Q4
 const MAX_BUILDERS := 2
+const TWO_BUILDER_SPEED := 1.75  # Q3
 
 var _grid: StationGrid
 var _board: AssignmentBoard
@@ -99,6 +100,35 @@ func set_priority(facility_id: int, priority: int) -> bool:
 	return true
 
 
+## 0..1 of the way to finished; 1 for a built facility, 0 for an unknown id.
+func progress_of(facility_id: int) -> float:
+	var facility := find(facility_id)
+	if facility == null:
+		return 0.0
+	if facility.built:
+		return 1.0
+	return facility.work_done / FacilityCatalog.build_seconds(facility.kind)
+
+
+## R6: adds `seconds` of game time of work from everyone standing at their build
+## cell (two builders count 1.75x), and finishes what is done. Call every frame
+## after moving the colonists.
+func advance(seconds: float) -> void:
+	if seconds <= 0.0:
+		return
+	var walkers := _board.walkers()
+	for blueprint in blueprints():
+		var working := 0
+		for colonist_id in builders_of(blueprint.id):
+			if walkers[colonist_id].is_working():
+				working += 1
+		if working == 0:
+			continue
+		blueprint.work_done += seconds * (1.0 if working == 1 else TWO_BUILDER_SPEED)
+		if blueprint.work_done >= FacilityCatalog.build_seconds(blueprint.kind):
+			_finish(blueprint)
+
+
 ## Ids of the colonists building this blueprint now, in the order they took it.
 func builders_of(facility_id: int) -> Array[int]:
 	var walkers := _board.walkers()
@@ -147,14 +177,15 @@ func _nearest_free_colonist(blueprint: Facility) -> Dictionary:
 	return best
 
 
-## Walkable cells sharing a side with the blueprint, outside it (I3).
+## Walkable cells sharing a side with the blueprint (I3), not on any blueprint
+## or facility, so finishing another blueprint never bumps the builder.
 func _work_cells(blueprint: Facility) -> Array[Vector2i]:
 	var covered := blueprint.cells()
 	var spots: Array[Vector2i] = []
 	for cell in covered:
 		for side in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
 			var spot: Vector2i = cell + side
-			if not covered.has(spot) and not spots.has(spot) and _grid.is_walkable(spot):
+			if not spots.has(spot) and _grid.is_walkable(spot) and at(spot) == null:
 				spots.append(spot)
 	return spots
 
@@ -165,6 +196,28 @@ func _steps(from: Vector2i, to: Vector2i) -> float:
 		return 0.0
 	var path := _grid.find_path(from, to)
 	return INF if path.is_empty() else float(path.size() - 1)
+
+
+## R7: the blueprint becomes a facility that blocks its cells. Its builders
+## are done; anyone standing on it moves to the nearest free floor; everyone
+## re-plans their route round it.
+func _finish(blueprint: Facility) -> void:
+	var walkers := _board.walkers()
+	var builders := builders_of(blueprint.id)
+	blueprint.built = true
+	for cell in blueprint.cells():
+		_grid.set_blocked(cell, true)
+	for colonist_id in builders:
+		walkers[colonist_id].complete_current()
+	_after_map_change(walkers)
+
+
+func _after_map_change(walkers: Dictionary) -> void:
+	for walker in walkers.values():
+		if _grid.is_blocked(walker.cell):
+			walker.move_to(_grid.nearest_walkable(walker.cell))
+		else:
+			walker.replan()
 
 
 ## Everyone building this blueprint stops and moves on to their next task.

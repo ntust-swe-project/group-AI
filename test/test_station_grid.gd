@@ -221,3 +221,18 @@ func test_floor_already_split_elsewhere_does_not_block_placing():
 	grid.add_room_rect(Rect2i(9, 1, 4, 4))
 	var corner: Array[Vector2i] = [Vector2i(1, 1)]
 	assert_false(grid.would_split(corner), "the two rooms were never joined")
+
+
+func test_walkable_cells_leave_out_blocked_ones():
+	var grid := _open_grid(Vector2i(3, 1))
+	grid.set_blocked(Vector2i(2, 0), true)
+	assert_eq(grid.walkable_cells(), [Vector2i(0, 0), Vector2i(1, 0)] as Array[Vector2i])
+
+
+func test_nearest_walkable_crosses_blocked_floor_but_not_walls():
+	var grid := _open_grid(Vector2i(5, 1))
+	grid.set_wall(Vector2i(0, 0))
+	grid.set_blocked(Vector2i(1, 0), true)
+	grid.set_blocked(Vector2i(2, 0), true)
+	assert_eq(grid.nearest_walkable(Vector2i(1, 0)), Vector2i(3, 0))
+	assert_eq(grid.nearest_walkable(Vector2i(4, 0)), Vector2i(4, 0), "already walkable")

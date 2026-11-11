@@ -1,8 +1,8 @@
 class_name FacilityCatalog
 extends RefCounted
 
-## What can be built (feature 004, R1): name, build-menu category and size.
-## Sizes are width x height in cells; there is no rotating (Q1).
+## What can be built (feature 004, R1): name, build-menu category, size and
+## build time. Sizes are width x height in cells; there is no rotating (Q1).
 
 enum Kind { HYGIENE_STALL, SLEEP_POD }
 
@@ -10,8 +10,8 @@ enum Kind { HYGIENE_STALL, SLEEP_POD }
 const CATEGORIES: Array[String] = ["生活"]
 
 const _DATA := {
-	Kind.HYGIENE_STALL: {"name": "衛生艙", "category": "生活", "size": Vector2i(1, 1)},
-	Kind.SLEEP_POD: {"name": "睡眠艙", "category": "生活", "size": Vector2i(1, 2)},
+	Kind.HYGIENE_STALL: {"name": "衛生艙", "category": "生活", "size": Vector2i(1, 1), "build_days": 0.2},
+	Kind.SLEEP_POD: {"name": "睡眠艙", "category": "生活", "size": Vector2i(1, 2), "build_days": 0.2},
 }
 
 
@@ -21,6 +21,11 @@ static func display_name(kind: Kind) -> String:
 
 static func size_of(kind: Kind) -> Vector2i:
 	return _DATA[kind]["size"]
+
+
+## Game seconds one builder needs (Q2: 0.2 game days for both kinds).
+static func build_seconds(kind: Kind) -> float:
+	return _DATA[kind]["build_days"] * DayClock.SECONDS_PER_DAY
 
 
 ## The kinds listed under `category`, in menu order.
