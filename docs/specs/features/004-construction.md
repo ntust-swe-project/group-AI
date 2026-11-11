@@ -41,7 +41,7 @@ vision-refs: ["3.3", "3.2"]
 | A6 | 拆除後格子恢復可走，找路可以穿過 | R8 | GUT |
 | A7 | 新局沒有任何設施；設施相關的邏輯 class 都不是 `Node` | R9 | GUT |
 | A8 | 不留殭屍工作：放置、分配、搶占、改優先度、取消藍圖、完工、拆除的每一步之後都成立 —— 沒有人的佇列裡有建造工作；每個在蓋的人的藍圖都存在；每張藍圖在蓋的人 ≤ 2 | R5、R8 | GUT |
-| A9 | 執行遊戲：右下角點「建造」→「生活」→「衛生艙」，虛線框跟著滑鼠；在牆邊或會堵路的位置放不下去，空地板放得下去並出現半透明藍圖；Esc 結束放置 | R1–R3 | 手動 |
+| A9 | 執行遊戲：右下角點「建造」→「生活」→「衛生艙」，虛線框跟著滑鼠；在牆上或會堵路的位置放不下去，空地板放得下去並出現半透明藍圖；Esc 結束放置 | R1–R3 | 手動 |
 | A10 | 執行遊戲：放下藍圖後，有空的殖民者自己走去旁邊蓋，最多兩人；完工後變成實體設施，殖民者繞著走；點藍圖可改優先度與取消，點設施可以拆除 | R4–R8 | 手動 |
 
 ### 不做什麼
@@ -76,8 +76,8 @@ vision-refs: ["3.3", "3.2"]
 ### 方案
 
 - **純邏輯**：`FacilityCatalog`（種類、中文名、分類、大小、工時）。`Facility`（id、種類、左上格、`built`、進度）。`Construction` 持有全部藍圖與設施：`place()` 檢查 R3（佔用格全空；連同其他藍圖暫設擋路後，原本相連的地板仍能從其中一格 flood fill 走遍，本來就不相連的區域不算切斷）、`cancel()`、`demolish()`、`set_priority()`。`StationGrid` 加 `set_blocked(cell, bool)`：在 `AStarGrid2D` 設 solid，`kind_of()` 仍是地板（不直接改成牆：拆除時會分不清原本是地板）。
-- **建造工作**：沿用 `Assignment`，加 `facility_id`；工作格是設施相鄰、可達的地板。`Construction` 持有待建清單；`assign_builders()` 每幀照優先度（同級比 id）掃未滿 2 人的藍圖，挑 `current_priority()` 比它低、路徑最近的人，把工作設成他手上的事。`TaskQueue` 被搶占時若手上是建造工作就不放回佇列、回報給 `Construction` 釋放名額；調低優先度時若佇列首件更急，同樣釋放。所有釋放與清除都在同一次呼叫內完成，A8 用一個檢查三個不變式的 helper 在每個測試步驟後斷言。`Wanderer` 對建造工作不自己計時完成：到了工作格就回報「在蓋」，`Construction` 每幀依在蓋人數累加進度（2 人乘 1.75），完工時讓所有在蓋的人完成工作。
-- **畫面**：新 `build_menu.tscn`（右下角，三層 `VBoxContainer`＋`Button`）。`main.gd` 加放置模式：滑鼠移動更新虛線框，左鍵 `place()`，右鍵與 Esc 離開，放置模式中右鍵不開動作選單。`station_map.gd` 畫藍圖（半透明）、設施（實心＋字）、虛線框（不合法換色）。資訊面板加設施區：種類、進度、優先度、取消／拆除；左鍵點到設施或藍圖時顯示。
+- **建造工作**：沿用 `Assignment`，加 `facility_id`；工作格是設施相鄰、可達的地板。待建清單就是全部藍圖，不另存一份；誰在蓋哪一張每次從殖民者手上的事讀出來，不存名單，所以不會殘留。`assign_builders()` 每幀照優先度（同級比 id）掃未滿 2 人的藍圖，挑 `current_priority()` 比它低、路徑最近的人（同距離先加入的先），把工作設成他手上的事；工作格不選其他藍圖或設施的格子。`TaskQueue` 被搶占時若手上是建造工作就直接丟掉、不放回佇列，名額自然空出；調低優先度時若佇列首件更急，取消他的建造。取消藍圖、完工都在同一次呼叫內清掉，A8 用一個檢查三個不變式的 helper 在每個測試步驟後斷言。`Wanderer` 對建造工作不自己計時完成：到了工作格就回報「在蓋」，`Construction` 每幀依在蓋人數累加進度（2 人乘 1.75），完工時讓所有在蓋的人完成工作。
+- **畫面**：新 `build_menu.tscn`（右下角，三層 `VBoxContainer`＋`Button`）。`main.gd` 加放置模式：滑鼠移動更新虛線框，左鍵 `place()`，右鍵與 Esc 離開，放置模式中右鍵不開動作選單。`station_map.gd` 畫藍圖（半透明）、設施（實心＋字）、虛線框（不合法換色）。資訊面板加設施區：種類、進度、優先度、取消／拆除；左鍵點到設施或藍圖時顯示（殖民者優先）。`main._process` 每幀在殖民者移動後呼叫 `construction.advance(遊戲秒數)` 與 `assign_builders()`，暫停時遊戲秒數為 0。新殖民者只出生在可走的格子。
 
 ### 要動的檔案
 
@@ -86,7 +86,7 @@ vision-refs: ["3.3", "3.2"]
 | `logic/facility_catalog.gd`、`facility.gd`、`construction.gd` | 新增 | 設施資料、放置判定、藍圖、分派、進度、拆除 |
 | `logic/station_grid.gd`、`assignment.gd`、`task_queue.gd`、`wanderer.gd` | 修改 | 擋路格、`facility_id`、建造被搶占不放回佇列、到點回報在蓋 |
 | `scenes/build_menu.tscn`／`.gd` 新增；`scenes/main.gd`、`station_map.gd`、`hud.tscn`／`.gd` 修改 | 新增／修改 | 建造選單、放置模式、畫藍圖與設施、面板設施區 |
-| `test/test_construction.gd`、`test_build_menu.gd` 新增；`test_station_grid.gd`、`test_task_queue.gd`、`test_wanderer.gd`、`test_logic_is_pure.gd`、`test_info_panel.gd` 修改 | 新增／修改 | A1–A8；A9、A10 的接線 |
+| `test/test_construction.gd`、`test_build_jobs.gd`、`test_build_progress.gd`、`test_demolish.gd`、`test_build_menu.gd`、`test_facility_panel.gd` 新增；`test_station_grid.gd`、`test_task_queue.gd`、`test_logic_is_pure.gd` 修改 | 新增／修改 | A1–A8；A9、A10 的接線 |
 
 動到 `project.godot` 共用欄位嗎：否
 
@@ -101,16 +101,16 @@ vision-refs: ["3.3", "3.2"]
 
 ### Tasks
 
-- [ ] **T1** — `FacilityCatalog`、`Facility`、`set_blocked()`、`place()`／`cancel()` 與放置判定；純度測試 ／ 驗收：A1、A7
-- [ ] **T2** — 待建清單與分派：優先度、最近、最多 2 人、搶占回清單、改優先度、取消；不變式檢查 ／ 驗收：A2、A3、A8
-- [ ] **T3** — 建造進度、2 人倍率、進度保留、完工擋路與移開殖民者 ／ 驗收：A4、A5
-- [ ] **T4** — 拆除 ／ 驗收：A6
-- [ ] **T5** — 建造選單與放置模式（虛線框、合法換色、Esc） ／ 驗收：A9
-- [ ] **T6** — 地圖畫藍圖與設施；面板設施區；佇列裡建造工作不給取消 ／ 驗收：A10
+- [x] **T1** — `FacilityCatalog`、`Facility`、`set_blocked()`、`place()`／`cancel()` 與放置判定；純度測試 ／ 驗收：A1、A7
+- [x] **T2** — 待建清單與分派：優先度、最近、最多 2 人、搶占回清單、改優先度、取消；不變式檢查 ／ 驗收：A2、A3、A8
+- [x] **T3** — 建造進度、2 人倍率、進度保留、完工擋路與移開殖民者 ／ 驗收：A4、A5
+- [x] **T4** — 拆除 ／ 驗收：A6
+- [x] **T5** — 建造選單與放置模式（虛線框、合法換色、Esc）；`main` 每幀推進建造與分派 ／ 驗收：A9
+- [x] **T6** — 地圖畫藍圖與設施；面板設施區；佇列裡建造工作不給取消 ／ 驗收：A10
 
 ## Gate A — 實作前核准
 
-Owner：組員 A　日期：2026-11-11　結果：核准（第 2 次，重簽 changelog 第 2 列的 Plan 用語修正）
+Owner：組員 A　日期：2026-11-11　結果：核准（第 3 次，重簽 changelog 第 3 列：Plan 與實作一致、A9 用語）
 
 - [x] Owner 讀過 feature 檔全文（不是摘要）
 - [x] 每條需求追得到來源；追不到的已標 `INV` 並決定去留
@@ -130,6 +130,8 @@ PR：#__　Owner 自審日期：____　退回次數：__
 
 | 驗收條件 | 過 | 怎麼驗的 |
 | --- | --- | --- |
+| A1–A8 | ✅ | GUT 241/241，S3 Verifier 在 `fe22049` 跑兩次全過，001、002 的測試同樣通過 |
+| A9、A10 | ✅ | 組員 A 於 Godot 手動驗收（2026-11-11）。邏輯都對；拆除操作很卡（一次點一座再按拆除），之後開 feature 做框選範圍的拆除工具 |
 
 ## Changelog
 
@@ -137,3 +139,4 @@ PR：#__　Owner 自審日期：____　退回次數：__
 | --- | --- | --- |
 | 2026-11-11 | 初版 | 立項 |
 | 2026-11-11 | Plan 的放置判定改為「原本相連的地板不得被切開」，本來就不相連的區域不算切斷 | T1 審查 agent 指出實作與 Plan 字面不同。照字面，地圖若有本來就不相連的房間會完全無法放置；目前只有一個大廳，兩者結果相同。組員 A 決定改 Plan、保留實作 |
+| 2026-11-11 | Plan 改為與實作一致：待建清單不另存、建造者從殖民者讀出、搶占時直接丟掉；`main` 每幀推進與分派寫進 Plan 與 T5；檔案表改成實際的測試檔；A9「牆邊」改「牆上」 | S2 審查 agent 指出實作與 Plan 字面不同（行為符合 R5、I4，A8 更不易出錯）；牆邊的地板只要不堵路就放得下，原句會被判不過 |
