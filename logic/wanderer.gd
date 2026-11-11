@@ -7,8 +7,9 @@ extends RefCounted
 
 ## Walking speed in cells per game second. Placeholder until seen on screen.
 const CELLS_PER_SECOND := 2.0
-## Game seconds of work at an assignment's cell before it is done (Q5, I6).
-const WORK_SECONDS := 2.0
+## Game seconds of work for a player's assignment (002 Q5, I6). Each assignment
+## carries its own work time (feature 003); this is the default it starts with.
+const WORK_SECONDS := Assignment.DEFAULT_WORK_SECONDS
 
 ## The cell the current step starts from (where it stands when not walking).
 ## Use position() for where the colonist is drawn.
@@ -40,7 +41,11 @@ func cancel(task_id: int) -> void:
 		_start_current()
 
 
-func advance(seconds: float) -> void:
+## Returns the assignments finished during this call, so the caller can tell a
+## finished one from a cancelled one (feature 003: only finished supply work
+## refills a need).
+func advance(seconds: float) -> Array[Assignment]:
+	var done: Array[Assignment] = []
 	var time_left := seconds
 	while time_left > 0.0:
 		var task := tasks.current
@@ -50,23 +55,25 @@ func advance(seconds: float) -> void:
 				tasks.cancel(task.id)
 				_start_current()
 				continue
-			var used := minf(time_left, WORK_SECONDS - _worked)
+			var used := minf(time_left, task.work_seconds - _worked)
 			_worked += used
 			time_left -= used
-			if _worked >= WORK_SECONDS:
+			if _worked >= task.work_seconds:
+				done.append(task)
 				tasks.complete()
 				_start_current()
 			continue
 		if _path.is_empty():
 			_pick_new_destination()
 			if _path.is_empty():
-				return
+				return done
 		var step := minf(time_left * CELLS_PER_SECOND, 1.0 - _progress)
 		_progress += step
 		time_left -= step / CELLS_PER_SECOND
 		if _progress >= 1.0:
 			cell = _path.pop_front()
 			_progress = 0.0
+	return done
 
 
 ## Position in cells, between two cells while walking.

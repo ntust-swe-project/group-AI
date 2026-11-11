@@ -236,3 +236,51 @@ func test_unreachable_assignment_mid_step_is_dropped_after_the_step():
 	assert_lte(walker.remaining_steps(), 1.0, "does not keep an old route")
 	walker.advance(_one_cell_of_time())
 	assert_eq(walker.tasks.current.id, 1, "dropped, back to the reachable one")
+
+
+# --- feature 003 T3: work time per assignment, reporting what got done ---
+
+func test_work_time_comes_from_the_assignment():
+	var walker := _walker_in_open_room()
+	var task := Assignment.new(1, Vector2i(6, 4), 3, &"stamina", 60.0)
+	walker.assign(task)
+	_advance_until_arrived(walker, Vector2i(6, 4))
+	walker.advance(59.0)
+	assert_same(walker.tasks.current, task, "a 60-second task is not done at 59")
+	walker.advance(1.1)
+	assert_null(walker.tasks.current)
+
+
+func test_a_player_assignment_keeps_the_002_work_time():
+	var task := Assignment.new(1, Vector2i.ZERO, 3)
+	assert_eq(task.work_seconds, Wanderer.WORK_SECONDS)
+	assert_eq(task.need, &"")
+
+
+func test_advance_returns_the_tasks_finished_in_that_call():
+	var walker := _walker_in_open_room()
+	var task := Assignment.new(1, Vector2i(6, 4), 3)
+	walker.assign(task)
+	_advance_until_arrived(walker, Vector2i(6, 4))
+	assert_eq(walker.advance(WORK * 0.5).size(), 0, "not done yet")
+	var done := walker.advance(WORK)
+	assert_eq(done.size(), 1)
+	assert_same(done[0], task)
+
+
+func test_cancelled_tasks_are_not_reported_as_finished():
+	var walker := _walker_in_open_room()
+	var task := Assignment.new(1, Vector2i(6, 4), 3)
+	walker.assign(task)
+	walker.cancel(task.id)
+	assert_eq(walker.advance(WORK * 3).size(), 0)
+
+
+func test_an_unreachable_task_dropped_inside_advance_is_not_reported():
+	var grid := StationGrid.new(Vector2i(14, 6))
+	grid.add_room_rect(Rect2i(1, 1, 6, 4))
+	grid.add_room_rect(Rect2i(9, 1, 4, 4))  # a second room with no corridor
+	var walker := Wanderer.new(grid, Vector2i(2, 2), _rng(1))
+	walker.assign(Assignment.new(1, Vector2i(10, 2), 3))
+	assert_eq(walker.advance(WORK * 3).size(), 0, "dropped, not done")
+	assert_null(walker.tasks.current, "dropped")
