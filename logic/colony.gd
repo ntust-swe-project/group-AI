@@ -25,6 +25,16 @@ func add_colonist() -> Colonist:
 	return colonist
 
 
+## Takes a dead colonist out of the set (feature 003, R9). Returns false if
+## no colonist has that id.
+func remove_colonist(colonist_id: int) -> bool:
+	for i in colonists.size():
+		if colonists[i].id == colonist_id:
+			colonists.remove_at(i)
+			return true
+	return false
+
+
 func _pick_unused_name() -> String:
 	var used := {}
 	for colonist in colonists:

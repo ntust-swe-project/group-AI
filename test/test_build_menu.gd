@@ -61,8 +61,10 @@ func _choose(kind_text: String) -> void:
 	_button(menu.get_node("%KindList"), kind_text).pressed.emit()
 
 
+## Near the middle of the hall, but below it: the very middle is feature 003's
+## water point, where nothing may be built (003 R12).
 func _centre() -> Vector2i:
-	return StationGrid.DEFAULT_HALL_SIZE / 2
+	return StationGrid.DEFAULT_HALL_SIZE / 2 + Vector2i(0, 4)
 
 
 func _a_wall_cell() -> Vector2i:

@@ -10,9 +10,12 @@ var grid := StationGrid.make_hall()
 var colony := Colony.new()
 var wanderers := {}  # colonist id -> Wanderer
 var board := AssignmentBoard.new(grid)
+var points := SupplyPoints.new()
+var care := ColonistCare.new(board, points, colony)
 var construction := Construction.new(grid, board)
 
 var _views := {}  # colonist id -> colonist view node
+var _selected_id := -1  # the colonist in the info panel, or -1
 var _rng := RandomNumberGenerator.new()
 var _placing := -1  # the FacilityCatalog.Kind being placed, or -1 (feature 004, R2)
 
@@ -25,6 +28,8 @@ var _placing := -1  # the FacilityCatalog.Kind being placed, or -1 (feature 004,
 
 func _ready() -> void:
 	station_map.grid = grid
+	station_map.supply_points = points
+	construction.reserve_cells(points.cells())  # nothing may be built on them (003 R12)
 	hud.clock = clock
 	hud.add_colonist_requested.connect(_on_add_colonist_requested)
 	context_menu.assign_chosen.connect(_on_assign_chosen)
@@ -49,9 +54,11 @@ func _process(delta: float) -> void:
 	# Colonists move in game time: frozen while paused or after day 30, faster at higher speed.
 	var game_seconds := 0.0 if clock.paused or clock.is_finished() else delta * clock.speed
 	clock.advance(delta)
-	for id in wanderers:
-		wanderers[id].advance(game_seconds)
-	# Building counts game time too, so nothing is built while paused (A4).
+	# Needs, walking, supplies, breakdowns and deaths all happen here (feature 003).
+	# ColonistCare already moved every colonist; nothing else may move them again.
+	for id in care.advance(game_seconds):
+		_forget_colonist(id)
+	# Building counts game time too, so nothing is built while paused (004 A4).
 	construction.advance(game_seconds)
 	construction.assign_builders()
 	for id in wanderers:
@@ -81,12 +88,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	var colonist := colonist_at(map_point)
 	var facility := construction.at(_cell_at(map_point))
 	if colonist:
+		_selected_id = colonist.id
 		hud.show_colonist(colonist, wanderers[colonist.id].tasks)
 		station_map.highlight(wanderers[colonist.id].tasks)
 	elif facility:
+		_selected_id = -1
 		hud.show_facility(facility.id)
 		station_map.highlight(null)
 	else:
+		_selected_id = -1
 		hud.hide_info()
 		station_map.highlight(null)
 	get_viewport().set_input_as_handled()
@@ -109,11 +119,28 @@ func _show_colonist(colonist: Colonist) -> void:
 	var walker := Wanderer.new(grid, _free_floor_cell(), _rng)
 	wanderers[colonist.id] = walker
 	board.register(colonist.id, walker)
+	care.register(colonist, walker)
 	var view := ColonistView.instantiate()
 	view.colonist = colonist
 	view.position = station_map.cell_to_pixel(walker.position())
 	station_map.add_child(view)
 	_views[colonist.id] = view
+
+
+## A colonist died (feature 003, R9): take their dot off the map, close the
+## menus (their colonist list would be out of date) and the info panel if it
+## was showing them. The colony and the board already let go.
+func _forget_colonist(id: int) -> void:
+	_close_menus()
+	wanderers.erase(id)
+	var view: Node = _views[id]
+	_views.erase(id)
+	station_map.remove_child(view)  # out of the tree now, not at the end of the frame
+	view.queue_free()
+	if id == _selected_id:
+		_selected_id = -1
+		hud.hide_info()
+		station_map.highlight(null)
 
 
 ## A random walkable cell no colonist stands on, or any walkable cell if all
