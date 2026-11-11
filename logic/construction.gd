@@ -68,6 +68,19 @@ func cancel(facility_id: int) -> bool:
 	return true
 
 
+## R8: removes a built facility at once (I6) and unblocks its cells; colonists
+## re-plan their routes. False for a blueprint (use cancel) or an unknown id.
+func demolish(facility_id: int) -> bool:
+	var facility := find(facility_id)
+	if facility == null or not facility.built:
+		return false
+	_all.erase(facility)
+	for cell in facility.cells():
+		_grid.set_blocked(cell, false)
+	_after_map_change(_board.walkers())
+	return true
+
+
 ## The blueprint or facility with that id, or null.
 func find(facility_id: int) -> Facility:
 	for facility in _all:
