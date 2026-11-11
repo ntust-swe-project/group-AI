@@ -18,6 +18,7 @@ commit 這份文件時用 scope `ai-log`。
 | 2026-11-10 | Claude Code 2.1.322（CLI） | Claude Opus 5.5 | `superpowers` plugin v7.0.0：SessionStart hook 注入 skill 指引，本次使用其 `brainstorming` skill。**repo 內附** `Donchitos/Claude-Code-Game-Studios` v1.3.0（`abc0de7`）的 agent、skill 與路徑規則（`.claude/rules/`，碰到對應檔案自動載入）；該模板的 18 個 hooks 與狀態列**未啟用**、根目錄 `CLAUDE.md` 未搬。另附 `rockerBOO/gut-skill`（`0259877`，本組改過）。未啟用自訂 hooks、未啟用 subagent 編排；本次用過 `web-fetch` subagent 一次讀網頁 | GUT 9.7.1（Godot 單元測試，非 AI 工具） |
 | 2026-11-10 | Claude Code 2.1.312（Claude 桌面版 Code 分頁） | Claude Opus 5.5 | 無 hooks、無 subagent 編排，output style 為 Learning。自 PR #10 起，repo 內附的模板 skill 在處理 `group-AI/` 底下的檔案時可被載入；本列生效時尚未使用任何一個 | 無 |
 | 2026-11-10 | Claude Code 2.1.322（CLI） | Claude Opus 5.5 | 同第 4 列，另加 **subagent 編排**：審查 agent 與 S3 Verifier 改用新開的 subagent（repo 內附 Game Studios 的 `qa-tester`），只給 feature 檔與 diff，不給對話；讀網頁用 `web-fetch` subagent。另用 `superpowers` 的 `test-driven-development` skill 與本組 `/gut` skill | GUT 9.7.1 |
+| 2026-11-11 | Claude Code 2.1.312（Claude 桌面版 Code 分頁） | Claude Opus 5.5 | 組員 B 環境。無 hooks。**subagent 編排**：審查 agent（每個 task 一個新的 subagent）與 S3 Verifier，只給 feature 檔與 diff，不給對話。自 feature 003 T1 起本專案停用 Learning output style，改由 agent 實作、人類審查核准。未使用模板 skill | GUT 9.7.1 |
 
 補充說明：
 
@@ -63,6 +64,12 @@ commit 這份文件時用 scope `ai-log`。
 | 27 | 2026-11-10 | feature 001 立項與 spec（組員 A 環境） | 請 AI 起草雛型骨架的 spec、plan、tasks，數值留給人填 | 修正後接受 | `INV` | 開放問題 Q1–Q6 由組員 A 答（一天 5 分鐘、3 人、0.5×–4× 等）；AI 提的 I1–I5（閒晃、變速、資訊面板、除錯按鈕、目錄）組員 A 全部納入。API 對本機 Godot 4.7.2 的 API dump 核對 | 待填 |
 | 28 | 2026-11-10 | GUT 靜默通過修正（組員 A 環境） | 做 T1 時 AI 發現測試檔語法錯誤 GUT 仍回 exit 0，請 AI 修（PR #13） | 修正後接受 | | AI 第一版 hook 掃整個 `test/`，審查 agent 指出會誤判 `-gselect` 篩選過的 run；改版後 9 種情況實測。審查 agent 另建議「只判斷 `null`」，AI 實測後否決（壞腳本 `load()` 不回 null）。AI 起初以「測試工具」為由沒送審，事後補跑 | 待填 |
 | 29 | 2026-11-10 | feature 001 實作 T1–T9 與 S3（組員 A 環境） | 請 AI 逐 task 以 TDD 實作，每個 task 交新 subagent 審查後再核准（PR #14） | 修正後接受 | `INV` `API` | 審查 agent 每個 task 都有發現：第 30 天長度為 0（組員 A 改 spec 為走完才結束）、名字用完的處理是 AI 自決（成為 I6）等；兩條被判誤判，記在 run 檔。`API`：AI 寫 `DayClock.new() is Node`，4.7 在 parse 時就擋下。組員 A 看截圖後改為橢圓大廳、以地板面積定大小。流程事故 6 條（含 Gate A 重簽前就改碼）記在 `docs/agent-runs/001-base-skeleton.md` | 待填 |
+| 30 | 2026-11-11 | PR #16 檢查（組員 B 環境） | 請 AI 同步 repo，檢查組員 A merge 的 PR #14–#16 是否照 WORKFLOW | 接受 | | AI 用 §7 的稽核命令確認沒有直接 push，並發現三個 PR 都沒有 §6 要求的 Gate B 留言；組員 B 選擇私下告知組員 A，不在 PR 上留言 | 0.1h |
+| 31 | 2026-11-11 | feature 003 spec（組員 B 環境） | 請 AI 起草殖民者狀態的 spec：切範圍、需求、驗收、開放問題 | 修正後接受 | `INV` | 範圍（變化＋失能＋死亡）與補給方式（殖民者自己去補）由 AI 列選項、組員 B 選；開頭段由組員 B 自寫、改六輪；Q1–Q10 照 AI 建議全部採用；I1–I6 中 I4 修改後納入、I6 部分納入。AI 舉 Gate A 意見範例時把 AI 發現的矛盾寫成組員 B 發現，commit 前更正 | 0.5h |
+| 32 | 2026-11-11 | feature 003 plan 與 spec 修改（組員 B 環境） | 請 AI 起草 plan、tasks，並在核准後依組員 B 的決定改 spec（Gate A 共簽 5 次，都在改碼前） | 修正後接受 | | Planner 發現 R3「走路降、閒晃升」與 001 的閒晃矛盾；組員 B 兩度改 `Stamina` 規則（後改為只有休息區能回）；休息區 60 秒不採 AI 建議的 10 秒；補給點改名 | 0.5h |
+| 33 | 2026-11-11 | feature 003 實作 T1–T6 與 S3（組員 B 環境） | 請 AI 逐 task 以 TDD 實作，每個 task 交新 subagent 審查後再核准，S3 交 Verifier | 修正後接受 | `INV` | 審查 agent 每個 task 都有發現，多數接受（測試只防太慢、空過的測試、A6 只驗一種條件等），4 項否決記為已知行為；AI 每次修正後以反向驗證確認測試抓得到；組員 B 改了補給點名稱，決定佇列顯示「前往」加完整名稱（I7 修改後納入） | 3h |
+| 34 | 2026-11-11 | 合併 004 與 feature 003 T7（組員 B 環境） | 請 AI 在開 PR 前檢查 `main` 的變動、解衝突並整合 004 | 部分接受 | | AI 模擬合併發現 004 已進 `main`、6 檔衝突，依 004 的約定由 003 解衝突並讓補給點不能放藍圖；`Stress` 不採 AI 建議的「玩家指派＋建造」，照組員 A 在 004 定的「任何工作都上升」；改到組員 A 的 `construction.gd` 與測試輔助函式；兩個已知問題留給 004 | 1.5h |
+| 35 | 2026-11-11 | PR #18（組員 B 環境） | 請 AI 起草 PR 內文並用 `gh` 開 PR，起草 Gate B 留言方向 | 接受 | | 自審 4 條刻意不預先打勾；留言草稿由組員 B 確認實際做過的事後送出 | 0.2h |
 
 **結果**：`接受` ／ `修正後接受` ／ `部分接受` ／ `拒絕`
 
@@ -76,13 +83,13 @@ commit 這份文件時用 scope `ai-log`。
 
 | 項目 | 數 |
 | --- | --- |
-| 紀錄筆數 | 29 |
-| 接受 ／ 修正後接受 ／ 部分接受 ／ 拒絕 | 13 ／ 12 ／ 4 ／ 0 |
+| 紀錄筆數 | 35 |
+| 接受 ／ 修正後接受 ／ 部分接受 ／ 拒絕 | 15 ／ 15 ／ 5 ／ 0 |
 | `API` 筆數 | 1（#29） |
-| `INV` 筆數（含 `DUP`） | 2（#27、#29；共 6 項，feature 001 的 I1–I6，全部納入） |
-| 累計工時 | ≥ 4.6h（#1–#3、#6–#12、#17–#19、#22–#23、#27–#29 待組員 A 補） |
+| `INV` 筆數（含 `DUP`） | 4（#27、#29、#31、#33；共 13 項：feature 001 的 I1–I6 全部納入；feature 003 的 I1–I7 中 I4、I7 修改後納入、I6 部分納入） |
+| 累計工時 | ≥ 10.4h（#1–#3、#6–#12、#17–#19、#22–#23、#27–#29 待組員 A 補） |
 
-統計區間：2026-11-09 起（repo 初始化至 PR #14 merge）。
+統計區間：2026-11-09 起（repo 初始化至 PR #18 merge）。
 
 ---
 
