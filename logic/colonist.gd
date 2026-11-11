@@ -8,6 +8,8 @@ var id: int
 var name: String
 var physiology := Physiology.new()
 var psychology := Psychology.new()
+## Cannot move or take orders, and never recovers (feature 003, R8, Q9).
+var incapacitated := false
 
 
 func _init(colonist_id: int, colonist_name: String) -> void:

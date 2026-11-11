@@ -1,10 +1,11 @@
 extends GutTest
 
-# A3 (wiring), A4, A5 of docs/specs/features/003-colonist-needs.md
+# A3 (wiring), A4, A5, A6, A7 of docs/specs/features/003-colonist-needs.md
 
 var grid: StationGrid
 var board: AssignmentBoard
 var points: SupplyPoints
+var colony: Colony
 var care: ColonistCare
 var ann: Colonist
 var walker: Wanderer
@@ -21,8 +22,9 @@ func before_each():
 		&"relief": Vector2i(6, 1),
 		&"stamina": Vector2i(8, 1),
 	})
-	care = ColonistCare.new(board, points)
-	ann = Colonist.new(1, "Ann")
+	colony = Colony.new()
+	care = ColonistCare.new(board, points, colony)
+	ann = colony.colonists[0]
 	_place_ann(Vector2i(11, 4))
 
 
@@ -200,3 +202,167 @@ func test_only_the_sleep_pod_takes_60_seconds():
 	for need in SupplyPoints.NEEDS:
 		var expected := 60.0 if need == &"stamina" else Wanderer.WORK_SECONDS
 		assert_eq(points.work_seconds(need), expected, need)
+
+
+# --- A6: incapacitation (R8) ---
+
+const DAY := DayClock.SECONDS_PER_DAY
+
+
+func test_any_body_need_at_zero_incapacitates():
+	for need in [&"hunger", &"thirst", &"body_temp", &"relief", &"stamina"]:
+		before_each()
+		ann.physiology.set(need, 0.0)
+		care.advance(0.0)
+		assert_true(ann.incapacitated, need)
+
+
+func test_stress_at_100_incapacitates():
+	ann.psychology.stress = 100.0
+	care.advance(0.0)
+	assert_true(ann.incapacitated)
+
+
+func test_mood_at_0_incapacitates():
+	ann.psychology.mood = 0.0
+	care.advance(0.0)
+	assert_true(ann.incapacitated)
+
+
+func test_needs_short_of_the_ends_do_not_incapacitate():
+	ann.physiology.thirst = 0.5
+	ann.psychology.stress = 99.5
+	ann.psychology.mood = 0.5
+	care.advance(0.0)
+	assert_false(ann.incapacitated)
+
+
+func test_every_way_of_breaking_down_has_the_same_consequences():
+	# A6: each of the three conditions, then all four consequences.
+	var ways := {
+		"a body need at 0": func(): ann.physiology.relief = 0.0,
+		"stress at 100": func(): ann.psychology.stress = 100.0,
+		"mood at 0": func(): ann.psychology.mood = 0.0,
+	}
+	for way in ways:
+		before_each()
+		board.create(ann.id, Vector2i(1, 1), 3)
+		board.create(ann.id, Vector2i(1, 4), 1)
+		care.advance(0.3)  # mid-step on the way
+		ways[way].call()
+		care.advance(0.0)
+		var where := walker.position()
+		care.advance(5.0)
+		assert_true(ann.incapacitated, way)
+		assert_eq(walker.position(), where, "%s: stops moving" % way)
+		assert_eq(_tasks().size(), 0, "%s: every task cancelled" % way)
+		assert_null(board.create(ann.id, Vector2i(3, 3), 5), "%s: no new orders" % way)
+		assert_false(board.who_can_reach(Vector2i(3, 3)).has(ann.id), "%s: not listed" % way)
+
+
+func test_a_need_reaching_zero_incapacitates_in_that_advance():
+	ann.physiology.thirst = 0.1
+	care.advance(1.0)
+	assert_true(ann.incapacitated)
+
+
+func test_the_incapacitated_stop_moving():
+	board.create(ann.id, Vector2i(1, 1), 3)
+	care.advance(0.3)  # mid-step on the way
+	ann.psychology.stress = 100.0
+	care.advance(0.0)
+	var where := walker.position()
+	care.advance(5.0)
+	assert_eq(walker.position(), where)
+
+
+func test_incapacitation_cancels_every_task():
+	board.create(ann.id, Vector2i(1, 1), 3)
+	board.create(ann.id, Vector2i(1, 4), 1)
+	ann.psychology.stress = 100.0
+	care.advance(0.0)
+	assert_eq(_tasks().size(), 0)
+
+
+func test_the_incapacitated_cannot_be_given_orders():
+	ann.psychology.stress = 100.0
+	care.advance(0.0)
+	assert_null(board.create(ann.id, Vector2i(3, 3), 5))
+	assert_false(board.who_can_reach(Vector2i(3, 3)).has(ann.id))
+
+
+func test_the_incapacitated_do_not_ask_for_supplies():
+	ann.psychology.stress = 100.0
+	ann.physiology.thirst = 10.0
+	care.advance(0.0)
+	care.advance(1.0)
+	assert_eq(_tasks().size(), 0)
+
+
+func test_incapacitation_does_not_wear_off():
+	ann.psychology.stress = 100.0
+	care.advance(0.0)
+	care.advance(30.0)
+	assert_lt(ann.psychology.stress, 100.0, "stress eases off without orders")
+	assert_true(ann.incapacitated, "but the colonist stays incapacitated (Q9)")
+
+
+func test_needs_keep_falling_while_incapacitated():
+	ann.psychology.stress = 100.0
+	care.advance(0.0)
+	care.advance(10.0)
+	assert_lt(ann.physiology.thirst, 100.0)
+
+
+# --- A7: death (R9) ---
+
+func test_only_hunger_at_zero_is_not_death():
+	ann.physiology.hunger = 0.0
+	assert_eq(care.advance(0.0).size(), 0)
+	assert_true(colony.colonists.has(ann))
+
+
+func test_only_thirst_at_zero_is_not_death():
+	ann.physiology.thirst = 0.0
+	assert_eq(care.advance(0.0).size(), 0)
+	assert_true(colony.colonists.has(ann))
+
+
+func test_hunger_and_thirst_at_zero_is_death_and_only_for_that_colonist():
+	var bo := colony.colonists[1]
+	var bo_walker := Wanderer.new(grid, Vector2i(5, 3))
+	board.register(bo.id, bo_walker)
+	care.register(bo, bo_walker)
+	ann.physiology.hunger = 0.0
+	ann.physiology.thirst = 0.0
+	var died := care.advance(0.0)
+	assert_eq(died.size(), 1)
+	assert_eq(died[0], ann.id)
+	assert_false(colony.colonists.has(ann))
+	assert_true(colony.colonists.has(bo))
+	assert_false(bo.incapacitated)
+	assert_true(board.who_can_reach(Vector2i(3, 3)).has(bo.id), "Bo can still be given orders")
+
+
+func test_an_incapacitated_colonist_dies_once_hunger_and_thirst_run_out():
+	ann.psychology.stress = 100.0
+	care.advance(0.0)
+	care.advance(DAY)  # thirst is out, hunger has a third left
+	assert_true(colony.colonists.has(ann))
+	var died := care.advance(DAY)
+	assert_eq(died.size(), 1)
+	assert_false(colony.colonists.has(ann))
+
+
+func test_removing_an_unknown_colonist_changes_nothing():
+	var before := colony.colonists.size()
+	assert_false(colony.remove_colonist(999))
+	assert_eq(colony.colonists.size(), before)
+
+
+func test_the_dead_are_no_longer_looked_after():
+	ann.physiology.hunger = 0.0
+	ann.physiology.thirst = 0.0
+	care.advance(0.0)
+	assert_eq(care.advance(1.0).size(), 0, "not reported twice")
+	assert_false(board.who_can_reach(Vector2i(3, 3)).has(ann.id))

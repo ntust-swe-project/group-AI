@@ -19,6 +19,12 @@ func register(colonist_id: int, walker: Wanderer) -> void:
 	_walkers[colonist_id] = walker
 
 
+## The colonist can no longer be given assignments or listed in the menu:
+## incapacitated or dead (feature 003, R8). Their tasks must be cancelled first.
+func unregister(colonist_id: int) -> void:
+	_walkers.erase(colonist_id)
+
+
 ## True when `cell` is floor that at least one colonist can walk to: the only
 ## cells the assignment menu opens on.
 func can_assign_at(cell: Vector2i) -> bool:

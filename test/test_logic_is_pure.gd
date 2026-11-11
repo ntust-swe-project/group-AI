@@ -31,3 +31,12 @@ func test_feature_002_classes_are_not_nodes():
 	_assert_pure(TaskQueue.new())
 	_assert_pure(AssignmentBoard.new(StationGrid.new(Vector2i(3, 3))))
 	_assert_pure(Wanderer.new(StationGrid.new(Vector2i(3, 3)), Vector2i.ZERO))
+
+
+func test_feature_003_classes_are_not_nodes():
+	# A8 of docs/specs/features/003-colonist-needs.md
+	var grid := StationGrid.new(Vector2i(3, 3))
+	_assert_pure(Physiology.new())
+	_assert_pure(Psychology.new())
+	_assert_pure(SupplyPoints.new())
+	_assert_pure(ColonistCare.new(AssignmentBoard.new(grid), SupplyPoints.new(), Colony.new()))
