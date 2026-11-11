@@ -1,6 +1,6 @@
 extends GutTest
 
-# A1 of docs/specs/features/003-colonist-needs.md
+# A1, A3 of docs/specs/features/003-colonist-needs.md
 
 
 func test_new_mind_is_calm_and_content():
@@ -27,3 +27,73 @@ func test_each_colonist_has_their_own_needs():
 	ann.psychology.stress = 90.0
 	assert_eq(bo.physiology.thirst, 100.0)
 	assert_eq(bo.psychology.stress, 0.0)
+
+
+# --- A3: how the mind changes (R4) ---
+
+const DAY := DayClock.SECONDS_PER_DAY
+
+
+func test_stress_rises_on_a_player_order():
+	var mind := Psychology.new()
+	mind.advance(30.0, true, false)
+	assert_gt(mind.stress, 0.0)
+
+
+func test_stress_falls_without_a_player_order():
+	var mind := Psychology.new()
+	mind.stress = 50.0
+	mind.advance(30.0, false, false)
+	assert_lt(mind.stress, 50.0)
+
+
+func test_mood_falls_while_the_body_is_low():
+	var mind := Psychology.new()
+	mind.advance(30.0, false, true)
+	assert_lt(mind.mood, 100.0)
+
+
+func test_mood_recovers_when_the_body_is_fine():
+	var mind := Psychology.new()
+	mind.mood = 50.0
+	mind.advance(30.0, false, false)
+	assert_gt(mind.mood, 50.0)
+
+
+func test_each_takes_one_day_end_to_end():
+	# Half a day, not a whole one: at a full day the clamp hides a rate that is too fast.
+	var mind := Psychology.new()
+	mind.advance(DAY / 2.0, true, true)
+	assert_almost_eq(mind.stress, 50.0, 0.001)
+	assert_almost_eq(mind.mood, 50.0, 0.001)
+	mind.advance(DAY / 2.0, false, false)
+	assert_almost_eq(mind.stress, 0.0, 0.001)
+	assert_almost_eq(mind.mood, 100.0, 0.001)
+
+
+func test_both_stay_between_0_and_100():
+	var mind := Psychology.new()
+	mind.advance(DAY * 3, true, true)
+	assert_eq(mind.stress, 100.0)
+	assert_eq(mind.mood, 0.0)
+	mind.advance(DAY * 3, false, false)
+	assert_eq(mind.stress, 0.0)
+	assert_eq(mind.mood, 100.0)
+
+
+func test_stress_ignores_the_body_and_mood_ignores_orders():
+	var ordered := Psychology.new()
+	ordered.mood = 50.0
+	ordered.advance(30.0, true, false)
+	assert_gt(ordered.mood, 50.0, "an order alone must not lower Mood")
+	var hungry := Psychology.new()
+	hungry.stress = 50.0
+	hungry.advance(30.0, false, true)
+	assert_lt(hungry.stress, 50.0, "a low body alone must not raise Stress")
+
+
+func test_no_game_time_no_change():
+	var mind := Psychology.new()
+	mind.advance(0.0, true, true)
+	assert_eq(mind.stress, 0.0)
+	assert_eq(mind.mood, 100.0)
