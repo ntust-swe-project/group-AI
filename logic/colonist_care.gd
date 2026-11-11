@@ -42,10 +42,11 @@ func advance(seconds: float) -> Array[int]:
 		var colonist: Colonist = _colonists[id]
 		var walker: Wanderer = _walkers[id]
 		var task := walker.tasks.current
-		var on_order := task != null and task.need == &""
-		var working := task != null and not _is_sleeping(walker)
+		# Any task is work, a player's order, a build job or supplies, except
+		# resting at the rest area (R3, R4).
+		var working := task != null and not _is_resting(walker)
 		colonist.physiology.advance(seconds, working)
-		colonist.psychology.advance(seconds, on_order, colonist.physiology.any_low())
+		colonist.psychology.advance(seconds, working, colonist.physiology.any_low())
 		if not colonist.incapacitated and _has_broken_down(colonist):
 			_incapacitate(id, colonist, walker)
 		if colonist.incapacitated:
@@ -86,9 +87,9 @@ func _incapacitate(id: int, colonist: Colonist, walker: Wanderer) -> void:
 	_board.unregister(id)
 
 
-## Asleep means at the sleep pod with the sleep task, not on the way to it:
+## Resting means at the rest area with the rest task, not on the way to it:
 ## walking there is work (R3).
-func _is_sleeping(walker: Wanderer) -> bool:
+func _is_resting(walker: Wanderer) -> bool:
 	var task := walker.tasks.current
 	return task != null and task.need == &"stamina" \
 			and walker.cell == task.cell and walker.remaining_steps() == 0.0

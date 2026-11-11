@@ -13,7 +13,7 @@ const MARK_FONT_SIZE := 12
 const SUPPLY_COLOR := Color(0.45, 0.8, 0.95)
 const SUPPLY_FONT_SIZE := 16
 ## What each supply point shows on the map (feature 003, A10).
-const SUPPLY_LABELS := {&"hunger": "食", &"thirst": "水", &"relief": "廁", &"stamina": "睡"}
+const SUPPLY_LABELS := {&"hunger": "食", &"thirst": "水", &"relief": "廁", &"stamina": "休"}
 const BLUEPRINT_COLOR := Color(0.35, 0.6, 0.95, 0.3)
 const BLUEPRINT_EDGE_COLOR := Color(0.45, 0.7, 1.0)
 const FACILITY_COLOR := Color(0.3, 0.5, 0.8)

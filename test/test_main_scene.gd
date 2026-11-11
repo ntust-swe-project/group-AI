@@ -138,7 +138,7 @@ func test_the_map_marks_the_four_supply_points():
 	assert_eq(labels[main.points.cell_for(&"hunger")], "食")
 	assert_eq(labels[main.points.cell_for(&"thirst")], "水")
 	assert_eq(labels[main.points.cell_for(&"relief")], "廁")
-	assert_eq(labels[main.points.cell_for(&"stamina")], "睡")
+	assert_eq(labels[main.points.cell_for(&"stamina")], "休")
 
 
 func test_an_incapacitated_colonist_is_drawn_grey():
@@ -187,3 +187,9 @@ func test_open_menus_close_when_a_colonist_dies():
 	gut.simulate(main, 1, 0.1)
 	assert_false(main.context_menu.visible)
 	await get_tree().process_frame
+
+
+func test_no_blueprint_can_go_on_a_supply_point_in_the_game():
+	# A12: the building feature must leave the supply points reachable.
+	for need in SupplyPoints.NEEDS:
+		assert_false(main.construction.can_place(FacilityCatalog.Kind.HYGIENE_STALL, main.points.cell_for(need)), need)

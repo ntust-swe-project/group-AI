@@ -18,12 +18,13 @@ var stress := MIN
 var mood := MAX
 
 
-## Lets `seconds` of game time pass. Stress rises while the colonist is on a
-## player's order and falls otherwise (I3); Mood falls while any body need is
-## low and recovers otherwise (I2).
-func advance(seconds: float, on_order: bool, body_low: bool) -> void:
+## Lets `seconds` of game time pass. Stress rises while the colonist has any
+## work (a player's order, a build job or supplies; resting is not work) and
+## falls otherwise (R4, I3); Mood falls while any body need is low and recovers
+## otherwise (I2).
+func advance(seconds: float, working: bool, body_low: bool) -> void:
 	var stress_step := _per_second(STRESS_DAYS) * seconds
-	stress = clampf(stress + (stress_step if on_order else -stress_step), MIN, MAX)
+	stress = clampf(stress + (stress_step if working else -stress_step), MIN, MAX)
 	var mood_step := _per_second(MOOD_DAYS) * seconds
 	mood = clampf(mood + (-mood_step if body_low else mood_step), MIN, MAX)
 

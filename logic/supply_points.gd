@@ -2,14 +2,15 @@ class_name SupplyPoints
 extends RefCounted
 
 ## The four placeholder supply points (feature 003, R7, I1): food, water, toilet
-## and the sleep pod, each refilling one Physiology need. The building feature
-## will replace them with facilities. Pure logic.
+## and the rest area, each refilling one Physiology need. A later feature will
+## replace them with facilities; until then construction may not cover them
+## (R12). Pure logic.
 
 ## The needs a supply point refills, named as Physiology's properties (R6).
 const NEEDS: Array[StringName] = [&"hunger", &"thirst", &"relief", &"stamina"]
 
 ## Where they stand in the default hall: left, middle and right of its centre
-## row, and the sleep pod above the middle (Q5). The tests check they are floor.
+## row, and the rest area above the middle (Q5). The tests check they are floor.
 const HALL_CELLS := {
 	&"hunger": Vector2i(14, 15),
 	&"thirst": Vector2i(28, 15),
@@ -17,9 +18,9 @@ const HALL_CELLS := {
 	&"stamina": Vector2i(28, 8),
 }
 
-## A full sleep takes a minute of game time (Q11); the rest take as long as a
+## A full rest takes a minute of game time (Q11); the others take as long as a
 ## player's assignment (Q6).
-const SLEEP_SECONDS := 60.0
+const REST_SECONDS := 60.0
 
 var _cells: Dictionary
 
@@ -34,4 +35,12 @@ func cell_for(need: StringName) -> Vector2i:
 
 
 func work_seconds(need: StringName) -> float:
-	return SLEEP_SECONDS if need == &"stamina" else Assignment.DEFAULT_WORK_SECONDS
+	return REST_SECONDS if need == &"stamina" else Assignment.DEFAULT_WORK_SECONDS
+
+
+## Every supply point's cell, for construction to keep clear (R12).
+func cells() -> Array[Vector2i]:
+	var all: Array[Vector2i] = []
+	for need in NEEDS:
+		all.append(cell_for(need))
+	return all

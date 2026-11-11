@@ -17,11 +17,19 @@ var _grid: StationGrid
 var _board: AssignmentBoard
 var _all: Array[Facility] = []  # in placing order
 var _next_id := 1
+var _reserved := {}  # cell -> true: kept clear for something else (feature 003's supply points)
 
 
 func _init(grid: StationGrid, board: AssignmentBoard) -> void:
 	_grid = grid
 	_board = board
+
+
+## Cells no blueprint may cover. Feature 003 keeps its supply points clear so a
+## facility can never wall them off (003 R12; 004 「與 003 的關係」).
+func reserve_cells(cells: Array[Vector2i]) -> void:
+	for cell in cells:
+		_reserved[cell] = true
 
 
 ## The cells a facility of `kind` would cover with its top-left at `origin`.
@@ -35,12 +43,13 @@ static func cells_for(kind: FacilityCatalog.Kind, origin: Vector2i) -> Array[Vec
 
 
 ## R3: every cell is walkable floor with no blueprint, facility or assignment
-## on it, and blocking them together with the other blueprints would not cut
-## the station in two.
+## on it, and not reserved (003 R12), and blocking them together with the other
+## blueprints would not cut the station in two.
 func can_place(kind: FacilityCatalog.Kind, origin: Vector2i) -> bool:
 	var cells := cells_for(kind, origin)
 	for cell in cells:
-		if not _grid.is_walkable(cell) or at(cell) != null or not _board.at(cell).is_empty():
+		if not _grid.is_walkable(cell) or at(cell) != null or not _board.at(cell).is_empty() \
+				or _reserved.has(cell):
 			return false
 	for blueprint in blueprints():
 		cells.append_array(blueprint.cells())

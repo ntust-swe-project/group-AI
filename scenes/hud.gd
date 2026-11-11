@@ -16,7 +16,7 @@ const TASK_FONT_SIZE := 14
 const BODY_NEEDS := [[&"hunger", "吃"], [&"thirst", "喝"], [&"body_temp", "體溫"], [&"relief", "排泄"], [&"stamina", "體力"]]
 const MIND_NEEDS := [[&"stress", "壓力"], [&"mood", "心情"]]
 ## How supply work is listed in the queue instead of a cell (I7), named as in R7.
-const SUPPLY_NAMES := {&"hunger": "食物補給站", &"thirst": "水補給站", &"relief": "廁所", &"stamina": "睡眠艙"}
+const SUPPLY_NAMES := {&"hunger": "食物補給站", &"thirst": "水補給站", &"relief": "廁所", &"stamina": "休息區"}
 
 var clock: DayClock
 var construction: Construction  # for the facility section and build job names (feature 004)

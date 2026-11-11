@@ -34,13 +34,13 @@ func test_each_colonist_has_their_own_needs():
 const DAY := DayClock.SECONDS_PER_DAY
 
 
-func test_stress_rises_on_a_player_order():
+func test_stress_rises_while_working():
 	var mind := Psychology.new()
 	mind.advance(30.0, true, false)
 	assert_gt(mind.stress, 0.0)
 
 
-func test_stress_falls_without_a_player_order():
+func test_stress_falls_while_not_working():
 	var mind := Psychology.new()
 	mind.stress = 50.0
 	mind.advance(30.0, false, false)
@@ -81,11 +81,11 @@ func test_both_stay_between_0_and_100():
 	assert_eq(mind.mood, 100.0)
 
 
-func test_stress_ignores_the_body_and_mood_ignores_orders():
+func test_stress_ignores_the_body_and_mood_ignores_work():
 	var ordered := Psychology.new()
 	ordered.mood = 50.0
 	ordered.advance(30.0, true, false)
-	assert_gt(ordered.mood, 50.0, "an order alone must not lower Mood")
+	assert_gt(ordered.mood, 50.0, "work alone must not lower Mood")
 	var hungry := Psychology.new()
 	hungry.stress = 50.0
 	hungry.advance(30.0, false, true)

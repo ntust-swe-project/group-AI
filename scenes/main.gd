@@ -29,6 +29,7 @@ var _placing := -1  # the FacilityCatalog.Kind being placed, or -1 (feature 004,
 func _ready() -> void:
 	station_map.grid = grid
 	station_map.supply_points = points
+	construction.reserve_cells(points.cells())  # nothing may be built on them (003 R12)
 	hud.clock = clock
 	hud.add_colonist_requested.connect(_on_add_colonist_requested)
 	context_menu.assign_chosen.connect(_on_assign_chosen)

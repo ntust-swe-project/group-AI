@@ -4,7 +4,7 @@ extends RefCounted
 ## One order from the player: go to a cell and work there (feature 002).
 ## For now the work is a placeholder: arrive, then wait (I1). Feature 003 also
 ## uses it for supply work a colonist gives itself: `need` names the need it
-## refills, and the sleep pod takes longer than the rest (R7).
+## refills, and the rest area takes longer than the others (R7).
 ## A build job (feature 004) is an assignment with a facility id: the cell is
 ## where the builder stands, next to the blueprint.
 

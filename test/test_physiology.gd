@@ -79,7 +79,7 @@ func test_stamina_falls_while_working():
 
 
 func test_stamina_holds_when_not_working():
-	# Idle, incapacitated or asleep: no change. Only a full sleep refills it (T3).
+	# Idle, incapacitated or resting: no change. Only a full rest refills it (T3).
 	var body := Physiology.new()
 	body.stamina = 50.0
 	body.advance(30.0, false)

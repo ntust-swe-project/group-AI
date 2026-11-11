@@ -1,6 +1,6 @@
 extends GutTest
 
-# A3 (wiring), A4, A5, A6, A7 of docs/specs/features/003-colonist-needs.md
+# A3 (wiring), A4, A5, A6, A7, A12 of docs/specs/features/003-colonist-needs.md
 
 var grid: StationGrid
 var board: AssignmentBoard
@@ -120,12 +120,12 @@ func test_supplies_refill_the_need_after_two_seconds_at_the_point():
 	assert_eq(_supply_tasks(&"thirst").size(), 0, "done and gone")
 
 
-func test_a_full_sleep_takes_60_seconds_and_refills_stamina():
+func test_a_full_rest_takes_60_seconds_and_refills_stamina():
 	_place_ann(points.cell_for(&"stamina"))
 	ann.physiology.stamina = 20.0
 	care.advance(0.0)
 	care.advance(59.0)
-	assert_eq(ann.physiology.stamina, 20.0, "asleep: neither falls nor refills yet")
+	assert_eq(ann.physiology.stamina, 20.0, "resting: neither falls nor refills yet")
 	care.advance(1.1)
 	assert_eq(ann.physiology.stamina, 100.0)
 	assert_eq(_supply_tasks(&"stamina").size(), 0, "done and gone")
@@ -142,7 +142,7 @@ func test_a_cancelled_supply_does_not_refill():
 
 # --- A3 wiring: what counts as working, on an order, a low body (R3, R4) ---
 
-func test_stamina_falls_on_the_way_to_the_pod():
+func test_stamina_falls_on_the_way_to_the_rest_area():
 	ann.physiology.stamina = 20.0
 	care.advance(0.0)
 	care.advance(1.0)
@@ -168,11 +168,28 @@ func test_a_player_order_raises_stress():
 	assert_gt(ann.psychology.stress, 0.0)
 
 
-func test_supply_work_alone_does_not_raise_stress():
+func test_supply_work_raises_stress_too():
+	# Any work raises Stress (R4, Gate A 5): going for supplies is work.
 	ann.physiology.thirst = 20.0
 	care.advance(0.0)
 	care.advance(1.0)
-	assert_eq(ann.psychology.stress, 0.0)
+	assert_gt(ann.psychology.stress, 0.0)
+
+
+func test_stress_eases_while_idle():
+	ann.psychology.stress = 50.0
+	care.advance(10.0)
+	assert_eq(_tasks().size(), 0, "nothing to do")
+	assert_lt(ann.psychology.stress, 50.0)
+
+
+func test_stress_eases_while_resting():
+	_place_ann(points.cell_for(&"stamina"))
+	ann.physiology.stamina = 20.0
+	ann.psychology.stress = 50.0
+	care.advance(0.0)
+	care.advance(10.0)
+	assert_lt(ann.psychology.stress, 50.0)
 
 
 func test_mood_falls_while_a_body_need_is_low():
@@ -198,7 +215,7 @@ func test_the_hall_points_are_four_different_cells():
 	assert_eq(cells.size(), 4)
 
 
-func test_only_the_sleep_pod_takes_60_seconds():
+func test_only_the_rest_area_takes_60_seconds():
 	for need in SupplyPoints.NEEDS:
 		var expected := 60.0 if need == &"stamina" else Wanderer.WORK_SECONDS
 		assert_eq(points.work_seconds(need), expected, need)
@@ -303,7 +320,7 @@ func test_incapacitation_does_not_wear_off():
 	ann.psychology.stress = 100.0
 	care.advance(0.0)
 	care.advance(30.0)
-	assert_lt(ann.psychology.stress, 100.0, "stress eases off without orders")
+	assert_lt(ann.psychology.stress, 100.0, "stress eases off without work")
 	assert_true(ann.incapacitated, "but the colonist stays incapacitated (Q9)")
 
 
@@ -366,3 +383,78 @@ func test_the_dead_are_no_longer_looked_after():
 	care.advance(0.0)
 	assert_eq(care.advance(1.0).size(), 0, "not reported twice")
 	assert_false(board.who_can_reach(Vector2i(3, 3)).has(ann.id))
+
+
+# --- A12: working alongside construction (feature 004, R12) ---
+
+const STALL := FacilityCatalog.Kind.HYGIENE_STALL
+const POD := FacilityCatalog.Kind.SLEEP_POD
+
+
+func _construction() -> Construction:
+	var construction := Construction.new(grid, board)
+	construction.reserve_cells(points.cells())
+	return construction
+
+
+func test_no_blueprint_on_a_supply_point():
+	var construction := _construction()
+	for need in SupplyPoints.NEEDS:
+		for kind in [STALL, POD]:
+			assert_false(construction.can_place(kind, points.cell_for(need)), need)
+			assert_null(construction.place(kind, points.cell_for(need)), need)
+	assert_true(construction.can_place(STALL, Vector2i(10, 2)), "ordinary floor still works")
+
+
+func test_the_incapacitated_are_not_sent_to_build():
+	var construction := _construction()
+	var blueprint := construction.place(STALL, Vector2i(10, 2))
+	ann.psychology.stress = 100.0
+	care.advance(0.0)
+	construction.assign_builders()
+	assert_eq(construction.builders_of(blueprint.id).size(), 0)
+
+
+func test_the_dead_are_not_sent_to_build():
+	var construction := _construction()
+	var blueprint := construction.place(STALL, Vector2i(10, 2))
+	ann.physiology.hunger = 0.0
+	ann.physiology.thirst = 0.0
+	care.advance(0.0)
+	construction.assign_builders()
+	assert_eq(construction.builders_of(blueprint.id).size(), 0)
+
+
+func test_a_builder_who_breaks_down_leaves_no_build_job_behind():
+	var construction := _construction()
+	var blueprint := construction.place(STALL, Vector2i(10, 2))
+	construction.assign_builders()
+	assert_true(construction.builders_of(blueprint.id).has(ann.id), "Ann was sent to build")
+	ann.psychology.stress = 100.0
+	care.advance(0.0)
+	assert_eq(construction.builders_of(blueprint.id).size(), 0, "no zombie builder (004 A8)")
+	assert_eq(_tasks().size(), 0)
+
+
+func test_building_wears_stamina_down_and_raises_stress():
+	var construction := _construction()
+	construction.place(STALL, Vector2i(10, 2))
+	construction.assign_builders()
+	assert_true(walker.tasks.current.is_build())
+	care.advance(1.0)
+	assert_lt(ann.physiology.stamina, 100.0)
+	assert_gt(ann.psychology.stress, 0.0)
+
+
+func test_a_sleep_pod_cannot_cover_a_supply_point_with_its_lower_cell():
+	# The sleep pod is 1x2: its second cell must be checked too.
+	var low_point := SupplyPoints.new({
+		&"hunger": Vector2i(10, 3),
+		&"thirst": Vector2i(4, 1),
+		&"relief": Vector2i(6, 1),
+		&"stamina": Vector2i(8, 1),
+	})
+	var construction := Construction.new(grid, board)
+	construction.reserve_cells(low_point.cells())
+	assert_false(construction.can_place(POD, Vector2i(10, 2)), "covers (10, 3) below")
+	assert_true(construction.can_place(POD, Vector2i(11, 2)), "one column over is fine")

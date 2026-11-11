@@ -33,8 +33,8 @@ var stamina := FULL
 ## at higher speed, so this class never needs to know about either (A2).
 ## `working` is true while the colonist has any task (a player's order, going
 ## for supplies, waiting at the food, water or toilet point) and false while
-## idle, incapacitated or asleep in the sleep pod. Working wears Stamina down;
-## nothing else brings it back here: only a full sleep in the pod refills it
+## idle, incapacitated or resting at the rest area. Working wears Stamina down;
+## nothing else brings it back here: only a full rest at the rest area refills it
 ## (R3, R7). No default: a caller that forgets it should fail to parse.
 func advance(seconds: float, working: bool) -> void:
 	hunger = maxf(EMPTY, hunger - per_second(HUNGER_DAYS) * seconds)
