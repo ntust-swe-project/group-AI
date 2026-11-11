@@ -10,14 +10,17 @@ var grid := StationGrid.make_hall()
 var colony := Colony.new()
 var wanderers := {}  # colonist id -> Wanderer
 var board := AssignmentBoard.new(grid)
+var construction := Construction.new(grid, board)
 
 var _views := {}  # colonist id -> colonist view node
 var _rng := RandomNumberGenerator.new()
+var _placing := -1  # the FacilityCatalog.Kind being placed, or -1 (feature 004, R2)
 
 @onready var station_map: Node2D = $StationMap
 @onready var hud: CanvasLayer = $Hud
 @onready var assign_menu: Control = $Hud/%AssignMenu
 @onready var context_menu: Control = $Hud/%ContextMenu
+@onready var build_menu: Control = $Hud/%BuildMenu
 
 
 func _ready() -> void:
@@ -27,6 +30,8 @@ func _ready() -> void:
 	context_menu.assign_chosen.connect(_on_assign_chosen)
 	assign_menu.assign_requested.connect(_on_assign_requested)
 	hud.cancel_task_requested.connect(_on_cancel_task_requested)
+	build_menu.kind_chosen.connect(_start_placing)
+	station_map.construction = construction
 	hud.refresh()
 	station_map.position = ((get_viewport_rect().size - station_map.pixel_size()) / 2.0).round()
 	for colonist in colony.colonists:
@@ -39,6 +44,10 @@ func _process(delta: float) -> void:
 	clock.advance(delta)
 	for id in wanderers:
 		wanderers[id].advance(game_seconds)
+	# Building counts game time too, so nothing is built while paused (A4).
+	construction.advance(game_seconds)
+	construction.assign_builders()
+	for id in wanderers:
 		_views[id].position = station_map.cell_to_pixel(wanderers[id].position())
 
 
@@ -48,6 +57,9 @@ func _on_add_colonist_requested() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _placing != -1 and _handle_placing_input(event):
+		get_viewport().set_input_as_handled()
+		return
 	var click := event as InputEventMouseButton
 	if click == null or not click.pressed:
 		return
@@ -139,6 +151,56 @@ func _on_assign_requested(colonist_id: int, priority: int) -> void:
 
 func _on_cancel_task_requested(assignment_id: int) -> void:
 	board.cancel(assignment_id)
+
+
+# --- feature 004: placing blueprints ---
+
+## The kind being placed, or -1 when not placing.
+func placing_kind() -> int:
+	return _placing
+
+
+func _start_placing(kind: FacilityCatalog.Kind) -> void:
+	_close_menus()
+	hud.hide_info()
+	station_map.highlight(null)
+	_placing = kind
+	_update_ghost(_cell_at(station_map.get_local_mouse_position()))
+
+
+func _stop_placing() -> void:
+	_placing = -1
+	station_map.clear_ghost()
+
+
+## R2: the ghost follows the mouse, left click places (and keeps placing),
+## right click or Esc stops. Returns true when the event was used.
+func _handle_placing_input(event: InputEvent) -> bool:
+	var key := event as InputEventKey
+	if key:
+		if key.pressed and not key.echo and key.keycode == KEY_ESCAPE:
+			_stop_placing()
+			return true
+		return false
+	if event is InputEventMouseMotion:
+		_update_ghost(_cell_at(station_map.to_local(event.position)))
+		return false
+	var click := event as InputEventMouseButton
+	if click == null or not click.pressed:
+		return false
+	if click.button_index == MOUSE_BUTTON_RIGHT:
+		_stop_placing()
+		return true
+	if click.button_index == MOUSE_BUTTON_LEFT:
+		var cell := _cell_at(station_map.to_local(click.position))
+		construction.place(_placing, cell)
+		_update_ghost(cell)
+		return true
+	return false
+
+
+func _update_ghost(cell: Vector2i) -> void:
+	station_map.set_ghost(_placing, cell, construction.can_place(_placing, cell))
 
 
 func _cell_at(map_point: Vector2) -> Vector2i:

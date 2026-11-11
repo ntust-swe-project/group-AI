@@ -10,13 +10,18 @@ const WALL_COLOR := Color(0.55, 0.58, 0.64)
 const LINE_COLOR := Color(0.24, 0.27, 0.32)
 const MARK_COLOR := Color(1.0, 0.85, 0.35)
 const MARK_FONT_SIZE := 12
+const GHOST_OK_COLOR := Color(0.45, 0.85, 0.55)
+const GHOST_BAD_COLOR := Color(0.95, 0.4, 0.4)
 
 var grid: StationGrid:
 	set(value):
 		grid = value
 		queue_redraw()
 
+var construction: Construction  # blueprints and facilities to draw (feature 004)
+
 var _highlighted: TaskQueue  # the selected colonist's tasks, or null
+var _ghost := {}  # {kind, cell, valid} while placing (feature 004, R2), else empty
 var _markers := Node2D.new()  # drawn above the floor, below the colonists
 
 
@@ -35,6 +40,23 @@ func _process(_delta: float) -> void:
 func highlight(tasks: TaskQueue) -> void:
 	_highlighted = tasks
 	_markers.queue_redraw()
+
+
+## While placing: a dashed outline of the facility under the mouse, green
+## where it fits and red where it does not (feature 004, R2, R3).
+func set_ghost(kind: FacilityCatalog.Kind, cell: Vector2i, valid: bool) -> void:
+	_ghost = {"kind": kind, "cell": cell, "valid": valid}
+	_markers.queue_redraw()
+
+
+func clear_ghost() -> void:
+	_ghost = {}
+	_markers.queue_redraw()
+
+
+## {kind, cell, valid}, or empty when not placing.
+func ghost() -> Dictionary:
+	return _ghost.duplicate()
 
 
 ## What is marked now, current task first: [{cell, priority, current}].
@@ -101,6 +123,7 @@ func _mark(task: Assignment, is_current: bool) -> Dictionary:
 ## Solid frame for the task being done, dashed for queued ones, priority in the corner.
 func _draw_markers() -> void:
 	var font := ThemeDB.fallback_font
+	_draw_ghost()
 	for mark in marked_cells():
 		var rect := _cell_rect(mark.cell).grow(-2.0)
 		if mark.current:
@@ -111,3 +134,16 @@ func _draw_markers() -> void:
 				_markers.draw_dashed_line(corners[i], corners[(i + 1) % 4], MARK_COLOR, 2.0, 4.0)
 		_markers.draw_string(font, rect.position + Vector2(3, MARK_FONT_SIZE), str(mark.priority),
 			HORIZONTAL_ALIGNMENT_LEFT, -1, MARK_FONT_SIZE, MARK_COLOR)
+
+
+func _draw_ghost() -> void:
+	if _ghost.is_empty():
+		return
+	var rect := Rect2(Vector2(_ghost.cell) * CELL_SIZE, Vector2(FacilityCatalog.size_of(_ghost.kind)) * CELL_SIZE)
+	_draw_dashed_rect(rect.grow(-1.0), GHOST_OK_COLOR if _ghost.valid else GHOST_BAD_COLOR)
+
+
+func _draw_dashed_rect(rect: Rect2, color: Color) -> void:
+	var corners := [rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]
+	for i in 4:
+		_markers.draw_dashed_line(corners[i], corners[(i + 1) % 4], color, 2.0, 4.0)
