@@ -75,7 +75,7 @@ vision-refs: ["3.3", "3.2"]
 
 ### 方案
 
-- **純邏輯**：`FacilityCatalog`（種類、中文名、分類、大小、工時）。`Facility`（id、種類、左上格、`built`、進度）。`Construction` 持有全部藍圖與設施：`place()` 檢查 R3（佔用格全空，暫設擋路後從任一地板 flood fill 數得到全部地板）、`cancel()`、`demolish()`、`set_priority()`。`StationGrid` 加 `set_blocked(cell, bool)`：在 `AStarGrid2D` 設 solid，`kind_of()` 仍是地板（不直接改成牆：拆除時會分不清原本是地板）。
+- **純邏輯**：`FacilityCatalog`（種類、中文名、分類、大小、工時）。`Facility`（id、種類、左上格、`built`、進度）。`Construction` 持有全部藍圖與設施：`place()` 檢查 R3（佔用格全空；連同其他藍圖暫設擋路後，原本相連的地板仍能從其中一格 flood fill 走遍，本來就不相連的區域不算切斷）、`cancel()`、`demolish()`、`set_priority()`。`StationGrid` 加 `set_blocked(cell, bool)`：在 `AStarGrid2D` 設 solid，`kind_of()` 仍是地板（不直接改成牆：拆除時會分不清原本是地板）。
 - **建造工作**：沿用 `Assignment`，加 `facility_id`；工作格是設施相鄰、可達的地板。`Construction` 持有待建清單；`assign_builders()` 每幀照優先度（同級比 id）掃未滿 2 人的藍圖，挑 `current_priority()` 比它低、路徑最近的人，把工作設成他手上的事。`TaskQueue` 被搶占時若手上是建造工作就不放回佇列、回報給 `Construction` 釋放名額；調低優先度時若佇列首件更急，同樣釋放。所有釋放與清除都在同一次呼叫內完成，A8 用一個檢查三個不變式的 helper 在每個測試步驟後斷言。`Wanderer` 對建造工作不自己計時完成：到了工作格就回報「在蓋」，`Construction` 每幀依在蓋人數累加進度（2 人乘 1.75），完工時讓所有在蓋的人完成工作。
 - **畫面**：新 `build_menu.tscn`（右下角，三層 `VBoxContainer`＋`Button`）。`main.gd` 加放置模式：滑鼠移動更新虛線框，左鍵 `place()`，右鍵與 Esc 離開，放置模式中右鍵不開動作選單。`station_map.gd` 畫藍圖（半透明）、設施（實心＋字）、虛線框（不合法換色）。資訊面板加設施區：種類、進度、優先度、取消／拆除；左鍵點到設施或藍圖時顯示。
 
@@ -110,7 +110,7 @@ vision-refs: ["3.3", "3.2"]
 
 ## Gate A — 實作前核准
 
-Owner：組員 A　日期：2026-11-11　結果：核准
+Owner：組員 A　日期：2026-11-11　結果：核准（第 2 次，重簽 changelog 第 2 列的 Plan 用語修正）
 
 - [x] Owner 讀過 feature 檔全文（不是摘要）
 - [x] 每條需求追得到來源；追不到的已標 `INV` 並決定去留
@@ -136,3 +136,4 @@ PR：#__　Owner 自審日期：____　退回次數：__
 | 日期 | 改了什麼 | 為什麼 |
 | --- | --- | --- |
 | 2026-11-11 | 初版 | 立項 |
+| 2026-11-11 | Plan 的放置判定改為「原本相連的地板不得被切開」，本來就不相連的區域不算切斷 | T1 審查 agent 指出實作與 Plan 字面不同。照字面，地圖若有本來就不相連的房間會完全無法放置；目前只有一個大廳，兩者結果相同。組員 A 決定改 Plan、保留實作 |
