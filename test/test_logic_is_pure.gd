@@ -31,3 +31,10 @@ func test_feature_002_classes_are_not_nodes():
 	_assert_pure(TaskQueue.new())
 	_assert_pure(AssignmentBoard.new(StationGrid.new(Vector2i(3, 3))))
 	_assert_pure(Wanderer.new(StationGrid.new(Vector2i(3, 3)), Vector2i.ZERO))
+
+
+func test_feature_004_classes_are_not_nodes():
+	var grid := StationGrid.new(Vector2i(3, 3))
+	_assert_pure(FacilityCatalog.new())
+	_assert_pure(Facility.new(1, FacilityCatalog.Kind.HYGIENE_STALL, Vector2i.ZERO))
+	_assert_pure(Construction.new(grid, AssignmentBoard.new(grid)))

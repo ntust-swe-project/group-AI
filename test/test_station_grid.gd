@@ -151,3 +151,73 @@ func test_default_hall_is_an_ellipse():
 	assert_eq(grid.kind_of(Vector2i(0, 0)), StationGrid.Cell.SPACE)
 	assert_eq(grid.kind_of(Vector2i(1, 1)), StationGrid.Cell.SPACE)
 	_assert_valid_path(grid, grid.find_path(top, bottom), top, bottom)
+
+
+# --- 004 A1: cells blocked by facilities (set_blocked, would_split) ---
+
+func test_a_blocked_cell_stays_floor_but_paths_go_around_it():
+	var grid := _open_grid(Vector2i(3, 3))
+	grid.set_blocked(Vector2i(1, 0), true)
+	grid.set_blocked(Vector2i(1, 1), true)
+	assert_eq(grid.kind_of(Vector2i(1, 0)), StationGrid.Cell.FLOOR)
+	assert_true(grid.is_blocked(Vector2i(1, 0)))
+	assert_false(grid.is_walkable(Vector2i(1, 0)))
+	var path := grid.find_path(Vector2i(0, 0), Vector2i(2, 0))
+	_assert_valid_path(grid, path, Vector2i(0, 0), Vector2i(2, 0))
+	assert_has(path, Vector2i(1, 2), "the only way round is the bottom row")
+
+
+func test_no_path_into_a_blocked_cell():
+	var grid := _open_grid(Vector2i(3, 3))
+	grid.set_blocked(Vector2i(1, 1), true)
+	assert_eq(grid.find_path(Vector2i(0, 0), Vector2i(1, 1)).size(), 0)
+
+
+func test_unblocking_lets_paths_through_again():
+	var grid := _open_grid(Vector2i(3, 1))
+	grid.set_blocked(Vector2i(1, 0), true)
+	assert_eq(grid.find_path(Vector2i(0, 0), Vector2i(2, 0)).size(), 0)
+	grid.set_blocked(Vector2i(1, 0), false)
+	assert_eq(grid.find_path(Vector2i(0, 0), Vector2i(2, 0)).size(), 3)
+
+
+func test_only_floor_can_be_blocked():
+	var grid := _grid_with_wall_column()
+	grid.set_blocked(Vector2i(2, 0), true)
+	grid.set_blocked(Vector2i(-1, 0), true)
+	assert_false(grid.is_blocked(Vector2i(2, 0)))
+	assert_false(grid.is_blocked(Vector2i(-1, 0)))
+	assert_true(grid.is_wall(Vector2i(2, 0)))
+
+
+func test_blocking_the_only_gap_would_split_the_floor():
+	var grid := _grid_with_wall_column()
+	var gap: Array[Vector2i] = [Vector2i(2, 4)]
+	assert_true(grid.would_split(gap))
+
+
+func test_blocking_inside_an_open_room_does_not_split_the_floor():
+	var grid := _open_grid(Vector2i(5, 5))
+	var middle: Array[Vector2i] = [Vector2i(2, 2), Vector2i(2, 3)]
+	assert_false(grid.would_split(middle))
+
+
+func test_cells_already_blocked_count_when_checking_a_split():
+	# 5x5 open floor with a wall row at y = 2 except x = 1 and x = 3.
+	var grid := _open_grid(Vector2i(5, 5))
+	for x in [0, 2, 4]:
+		grid.set_wall(Vector2i(x, 2))
+	var left: Array[Vector2i] = [Vector2i(1, 2)]
+	var right: Array[Vector2i] = [Vector2i(3, 2)]
+	assert_false(grid.would_split(left), "the right gap still joins top and bottom")
+	grid.set_blocked(Vector2i(3, 2), true)
+	assert_true(grid.would_split(left))
+	assert_false(grid.would_split(right), "already blocked, nothing changes")
+
+
+func test_floor_already_split_elsewhere_does_not_block_placing():
+	var grid := StationGrid.new(Vector2i(14, 6))
+	grid.add_room_rect(Rect2i(1, 1, 4, 4))
+	grid.add_room_rect(Rect2i(9, 1, 4, 4))
+	var corner: Array[Vector2i] = [Vector2i(1, 1)]
+	assert_false(grid.would_split(corner), "the two rooms were never joined")
