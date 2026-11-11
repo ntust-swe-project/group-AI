@@ -5,6 +5,7 @@ extends Control
 ## one folds the menu and asks main to start placing it.
 
 signal kind_chosen(kind: FacilityCatalog.Kind)
+signal opened  # 建造 was pressed and the categories are now showing
 
 const BUTTON_SIZE := Vector2(120, 36)
 
@@ -23,6 +24,7 @@ func toggle() -> void:
 		close()
 	else:
 		%CategoryList.visible = true
+		opened.emit()
 
 
 func close() -> void:

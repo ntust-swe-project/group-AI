@@ -31,7 +31,14 @@ func _ready() -> void:
 	assign_menu.assign_requested.connect(_on_assign_requested)
 	hud.cancel_task_requested.connect(_on_cancel_task_requested)
 	build_menu.kind_chosen.connect(_start_placing)
+	build_menu.opened.connect(func():
+		context_menu.close()
+		assign_menu.close())
 	station_map.construction = construction
+	hud.construction = construction
+	hud.facility_priority_requested.connect(construction.set_priority)
+	hud.facility_cancel_requested.connect(_on_facility_cancel_requested)
+	hud.facility_demolish_requested.connect(_on_facility_demolish_requested)
 	hud.refresh()
 	station_map.position = ((get_viewport_rect().size - station_map.pixel_size()) / 2.0).round()
 	for colonist in colony.colonists:
@@ -72,9 +79,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	_close_menus()
 	var colonist := colonist_at(map_point)
+	var facility := construction.at(_cell_at(map_point))
 	if colonist:
 		hud.show_colonist(colonist, wanderers[colonist.id].tasks)
 		station_map.highlight(wanderers[colonist.id].tasks)
+	elif facility:
+		hud.show_facility(facility.id)
+		station_map.highlight(null)
 	else:
 		hud.hide_info()
 		station_map.highlight(null)
@@ -105,14 +116,15 @@ func _show_colonist(colonist: Colonist) -> void:
 	_views[colonist.id] = view
 
 
-## A random floor cell no colonist stands on, or any floor cell if all are taken.
+## A random walkable cell no colonist stands on, or any walkable cell if all
+## are taken. Never inside a facility (feature 004, R7).
 func _free_floor_cell() -> Vector2i:
 	var taken := {}
 	for walker in wanderers.values():
 		taken[walker.cell] = true
-	var cells := grid.floor_cells().filter(func(c): return not taken.has(c))
+	var cells := grid.walkable_cells().filter(func(c): return not taken.has(c))
 	if cells.is_empty():
-		cells = grid.floor_cells()
+		cells = grid.walkable_cells()
 	return cells[_rng.randi_range(0, cells.size() - 1)]
 
 
@@ -129,6 +141,7 @@ func _open_context_menu(cell: Vector2i, screen_position: Vector2) -> void:
 func _close_menus() -> void:
 	context_menu.close()
 	assign_menu.close()
+	build_menu.close()
 
 
 func _on_assign_chosen() -> void:
@@ -154,6 +167,16 @@ func _on_cancel_task_requested(assignment_id: int) -> void:
 
 
 # --- feature 004: placing blueprints ---
+
+func _on_facility_cancel_requested(facility_id: int) -> void:
+	construction.cancel(facility_id)
+	hud.hide_info()
+
+
+func _on_facility_demolish_requested(facility_id: int) -> void:
+	construction.demolish(facility_id)
+	hud.hide_info()
+
 
 ## The kind being placed, or -1 when not placing.
 func placing_kind() -> int:
@@ -193,14 +216,15 @@ func _handle_placing_input(event: InputEvent) -> bool:
 		return true
 	if click.button_index == MOUSE_BUTTON_LEFT:
 		var cell := _cell_at(station_map.to_local(click.position))
-		construction.place(_placing, cell)
+		construction.place(_placing as FacilityCatalog.Kind, cell)
 		_update_ghost(cell)
 		return true
 	return false
 
 
 func _update_ghost(cell: Vector2i) -> void:
-	station_map.set_ghost(_placing, cell, construction.can_place(_placing, cell))
+	var kind := _placing as FacilityCatalog.Kind
+	station_map.set_ghost(kind, cell, construction.can_place(kind, cell))
 
 
 func _cell_at(map_point: Vector2) -> Vector2i:
