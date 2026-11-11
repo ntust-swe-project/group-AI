@@ -3,6 +3,8 @@ extends RefCounted
 
 ## One colonist's to-do list (feature 002, R3, R4). The current task is the
 ## one being done; the rest wait, most urgent first, then oldest first.
+## Build jobs (feature 004, R5) never wait here: one that gets pushed aside is
+## dropped, and Construction hands the blueprint to someone else.
 
 ## The task being done, or null while idling.
 var current: Assignment = null
@@ -15,18 +17,25 @@ func current_priority() -> int:
 
 
 ## Returns true when `current` changed: the new task is more urgent than what
-## is being done, so it takes over now and the old one goes back in line.
-## Adding a task already here (same id) does nothing.
+## is being done, so it takes over now and the old one goes back in line (a
+## build job is dropped instead). Adding a task already here (same id) does
+## nothing, and neither does a build job that is not more urgent.
 func add(task: Assignment) -> bool:
 	if _has(task.id):
 		return false
 	if task.priority > current_priority():
-		if current:
+		if current and not current.is_build():
 			_wait(current)
 		current = task
 		return true
-	_wait(task)
+	if not task.is_build():
+		_wait(task)
 	return false
+
+
+## Priority of the first waiting task, or 0 when nothing waits.
+func next_priority() -> int:
+	return _waiting[0].priority if not _waiting.is_empty() else 0
 
 
 ## The current task is done; start the next one (or idle).

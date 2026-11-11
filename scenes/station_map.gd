@@ -10,13 +10,24 @@ const WALL_COLOR := Color(0.55, 0.58, 0.64)
 const LINE_COLOR := Color(0.24, 0.27, 0.32)
 const MARK_COLOR := Color(1.0, 0.85, 0.35)
 const MARK_FONT_SIZE := 12
+const BLUEPRINT_COLOR := Color(0.35, 0.6, 0.95, 0.3)
+const BLUEPRINT_EDGE_COLOR := Color(0.45, 0.7, 1.0)
+const FACILITY_COLOR := Color(0.3, 0.5, 0.8)
+const FACILITY_EDGE_COLOR := Color(0.75, 0.85, 1.0)
+const FACILITY_FONT_SIZE := 9  # three characters must fit in one 32 px cell
+const GHOST_OK_COLOR := Color(0.45, 0.85, 0.55)
+const GHOST_BAD_COLOR := Color(0.95, 0.4, 0.4)
 
 var grid: StationGrid:
 	set(value):
 		grid = value
 		queue_redraw()
 
+var construction: Construction  # blueprints and facilities to draw (feature 004)
+
 var _highlighted: TaskQueue  # the selected colonist's tasks, or null
+var _ghost := {}  # {kind, cell, valid} while placing (feature 004, R2), else empty
+var _drawn := []  # drawn_facilities() as of the last redraw
 var _markers := Node2D.new()  # drawn above the floor, below the colonists
 
 
@@ -27,14 +38,51 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	if _highlighted:
-		_markers.queue_redraw()  # tasks finish and move on while selected
+	# Tasks finish and move on while selected. Blueprints and facilities are
+	# redrawn only when one is placed, finished or removed (feature 004).
+	var drawn := drawn_facilities()
+	if _highlighted or drawn != _drawn:
+		_drawn = drawn
+		_markers.queue_redraw()
 
 
 ## Mark the cells of one colonist's tasks (feature 002, I7); null clears.
 func highlight(tasks: TaskQueue) -> void:
 	_highlighted = tasks
 	_markers.queue_redraw()
+
+
+## While placing: a dashed outline of the facility under the mouse, green
+## where it fits and red where it does not (feature 004, R2, R3).
+func set_ghost(kind: FacilityCatalog.Kind, cell: Vector2i, valid: bool) -> void:
+	_ghost = {"kind": kind, "cell": cell, "valid": valid}
+	_markers.queue_redraw()
+
+
+func clear_ghost() -> void:
+	_ghost = {}
+	_markers.queue_redraw()
+
+
+## What is drawn for each blueprint and facility, in placing order: [{id, built}].
+func drawn_facilities() -> Array:
+	var drawn := []
+	for facility in _facilities():
+		drawn.append({"id": facility.id, "built": facility.built})
+	return drawn
+
+
+func _facilities() -> Array[Facility]:
+	if construction == null:
+		return []
+	var all := construction.blueprints() + construction.facilities()
+	all.sort_custom(func(a: Facility, b: Facility) -> bool: return a.id < b.id)
+	return all
+
+
+## {kind, cell, valid}, or empty when not placing.
+func ghost() -> Dictionary:
+	return _ghost.duplicate()
 
 
 ## What is marked now, current task first: [{cell, priority, current}].
@@ -101,6 +149,8 @@ func _mark(task: Assignment, is_current: bool) -> Dictionary:
 ## Solid frame for the task being done, dashed for queued ones, priority in the corner.
 func _draw_markers() -> void:
 	var font := ThemeDB.fallback_font
+	_draw_facilities(font)
+	_draw_ghost()
 	for mark in marked_cells():
 		var rect := _cell_rect(mark.cell).grow(-2.0)
 		if mark.current:
@@ -111,3 +161,32 @@ func _draw_markers() -> void:
 				_markers.draw_dashed_line(corners[i], corners[(i + 1) % 4], MARK_COLOR, 2.0, 4.0)
 		_markers.draw_string(font, rect.position + Vector2(3, MARK_FONT_SIZE), str(mark.priority),
 			HORIZONTAL_ALIGNMENT_LEFT, -1, MARK_FONT_SIZE, MARK_COLOR)
+
+
+func _draw_ghost() -> void:
+	if _ghost.is_empty():
+		return
+	var rect := Rect2(Vector2(_ghost.cell) * CELL_SIZE, Vector2(FacilityCatalog.size_of(_ghost.kind)) * CELL_SIZE)
+	_draw_dashed_rect(rect.grow(-1.0), GHOST_OK_COLOR if _ghost.valid else GHOST_BAD_COLOR)
+
+
+func _draw_dashed_rect(rect: Rect2, color: Color) -> void:
+	var corners := [rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]
+	for i in 4:
+		_markers.draw_dashed_line(corners[i], corners[(i + 1) % 4], color, 2.0, 4.0)
+
+
+## Blueprints are see-through with a thin edge; facilities are solid. Both are
+## labelled with their name (feature 004, R2, R7).
+func _draw_facilities(font: Font) -> void:
+	for facility in _facilities():
+		var rect := Rect2(Vector2(facility.origin) * CELL_SIZE, Vector2(FacilityCatalog.size_of(facility.kind)) * CELL_SIZE).grow(-1.0)
+		if facility.built:
+			_markers.draw_rect(rect, FACILITY_COLOR)
+			_markers.draw_rect(rect, FACILITY_EDGE_COLOR, false, 1.0)
+		else:
+			_markers.draw_rect(rect, BLUEPRINT_COLOR)
+			_markers.draw_rect(rect, BLUEPRINT_EDGE_COLOR, false, 1.0)
+		var label := FacilityCatalog.display_name(facility.kind)
+		_markers.draw_string(font, rect.position + Vector2(1, rect.size.y / 2.0 + FACILITY_FONT_SIZE / 2.0), label,
+			HORIZONTAL_ALIGNMENT_CENTER, rect.size.x - 2.0, FACILITY_FONT_SIZE, FACILITY_EDGE_COLOR)
