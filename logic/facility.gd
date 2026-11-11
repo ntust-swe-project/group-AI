@@ -7,6 +7,7 @@ var id: int
 var kind: FacilityCatalog.Kind
 var origin: Vector2i  # top-left cell
 var built := false
+var priority := Construction.DEFAULT_PRIORITY  # of its build job (R4, Q4)
 
 
 func _init(facility_id: int, facility_kind: FacilityCatalog.Kind, top_left: Vector2i) -> void:
