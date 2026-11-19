@@ -94,7 +94,7 @@ func test_only_the_build_button_shows_at_start():
 func test_build_opens_the_categories_and_a_category_its_facilities():
 	menu.get_node("%BuildButton").pressed.emit()
 	assert_true(menu.get_node("%CategoryList").visible)
-	assert_eq(_texts(menu.get_node("%CategoryList")), ["生活"] as Array[String])
+	assert_eq(_texts(menu.get_node("%CategoryList")), ["生活", "生產"] as Array[String])
 	assert_false(menu.get_node("%KindList").visible)
 	_button(menu.get_node("%CategoryList"), "生活").pressed.emit()
 	assert_true(menu.get_node("%KindList").visible)

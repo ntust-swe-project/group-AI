@@ -15,14 +15,16 @@ const TWO_BUILDER_SPEED := 1.75  # Q3
 
 var _grid: StationGrid
 var _board: AssignmentBoard
+var _stockpile: Stockpile  # null = building is free (feature 004's tests)
 var _all: Array[Facility] = []  # in placing order
 var _next_id := 1
 var _reserved := {}  # cell -> true: kept clear for something else (feature 003's supply points)
 
 
-func _init(grid: StationGrid, board: AssignmentBoard) -> void:
+func _init(grid: StationGrid, board: AssignmentBoard, stockpile: Stockpile = null) -> void:
 	_grid = grid
 	_board = board
+	_stockpile = stockpile
 
 
 ## Cells no blueprint may cover. Feature 003 keeps its supply points clear so a
@@ -42,10 +44,26 @@ static func cells_for(kind: FacilityCatalog.Kind, origin: Vector2i) -> Array[Vec
 	return cells
 
 
+## R7: the stock holds enough materials for `kind` (always true with no stockpile).
+func can_afford(kind: FacilityCatalog.Kind) -> bool:
+	return _stockpile == null or _stockpile.amount(Stockpile.Kind.MATERIALS) >= FacilityCatalog.cost_of(kind)
+
+
+## R9: the total cost of every finished facility; blueprints do not count. The
+## only definition of the development level in the game.
+func development_level() -> int:
+	var level := 0
+	for facility in facilities():
+		level += FacilityCatalog.cost_of(facility.kind)
+	return level
+
+
 ## R3: every cell is walkable floor with no blueprint, facility or assignment
 ## on it, and not reserved (003 R12), and blocking them together with the other
-## blueprints would not cut the station in two.
+## blueprints would not cut the station in two; and R7: it is affordable.
 func can_place(kind: FacilityCatalog.Kind, origin: Vector2i) -> bool:
+	if not can_afford(kind):
+		return false
 	var cells := cells_for(kind, origin)
 	for cell in cells:
 		if not _grid.is_walkable(cell) or at(cell) != null or not _board.at(cell).is_empty() \
@@ -56,29 +74,34 @@ func can_place(kind: FacilityCatalog.Kind, origin: Vector2i) -> bool:
 	return not _grid.would_split(cells)
 
 
-## A new blueprint, or null (changing nothing) where `can_place` is false.
+## A new blueprint (its cost taken from the stock, R7), or null (changing
+## nothing) where `can_place` is false.
 func place(kind: FacilityCatalog.Kind, origin: Vector2i) -> Facility:
 	if not can_place(kind, origin):
 		return null
+	if _stockpile:
+		_stockpile.take(Stockpile.Kind.MATERIALS, FacilityCatalog.cost_of(kind))
 	var facility := Facility.new(_next_id, kind, origin)
 	_next_id += 1
 	_all.append(facility)
 	return facility
 
 
-## Removes a blueprint at once (I6), and its builders move on to their next
-## task in this same call. False if no blueprint has that id.
+## Removes a blueprint at once (I6), refunds its whole cost (R7), and its
+## builders move on to their next task in this same call. False if no blueprint has that id.
 func cancel(facility_id: int) -> bool:
 	var blueprint := find(facility_id)
 	if blueprint == null or blueprint.built:
 		return false
 	_release_builders(facility_id)
 	_all.erase(blueprint)
+	if _stockpile:
+		_stockpile.add(Stockpile.Kind.MATERIALS, FacilityCatalog.cost_of(blueprint.kind))
 	return true
 
 
 ## R8: removes a built facility at once (I6) and unblocks its cells; colonists
-## re-plan their routes. False for a blueprint (use cancel) or an unknown id.
+## re-plan their routes. Nothing is refunded (005 R7). False for a blueprint (use cancel) or an unknown id.
 func demolish(facility_id: int) -> bool:
 	var facility := find(facility_id)
 	if facility == null or not facility.built:
