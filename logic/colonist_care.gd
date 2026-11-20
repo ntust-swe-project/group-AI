@@ -9,6 +9,11 @@ extends RefCounted
 ## Supply work is as urgent as a middling order: a player's 4-5 cuts in, a
 ## 1-2 waits (Q4).
 const SUPPLY_PRIORITY := 3
+## Which stock a need's refill draws on (005, R3). Relief and rest use none.
+const STOCK_FOR_NEED := {
+	&"hunger": Stockpile.Kind.FOOD,
+	&"thirst": Stockpile.Kind.WATER,
+}
 
 var _board: AssignmentBoard
 var _points: SupplyPoints
@@ -17,13 +22,6 @@ var _stockpile: Stockpile  # null: supplies are free, as in feature 003
 var _colonists := {}  # colonist id -> Colonist
 var _walkers := {}  # colonist id -> Wanderer
 var _paid := {}  # task id -> [Assignment, colonist id]: portions taken and not yet finished
-
-
-## Which stock a need's refill draws on (005, R3). Relief and rest use none.
-const STOCK_FOR_NEED := {
-	&"hunger": Stockpile.Kind.FOOD,
-	&"thirst": Stockpile.Kind.WATER,
-}
 
 
 ## With a `stockpile`, food and water supply work costs one portion each

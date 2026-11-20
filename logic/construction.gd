@@ -88,7 +88,8 @@ func place(kind: FacilityCatalog.Kind, origin: Vector2i) -> Facility:
 
 
 ## Removes a blueprint at once (I6), refunds its whole cost (R7), and its
-## builders move on to their next task in this same call. False if no blueprint has that id.
+## builders move on to their next task in this same call. False if no
+## blueprint has that id.
 func cancel(facility_id: int) -> bool:
 	var blueprint := find(facility_id)
 	if blueprint == null or blueprint.built:
@@ -101,7 +102,8 @@ func cancel(facility_id: int) -> bool:
 
 
 ## R8: removes a built facility at once (I6) and unblocks its cells; colonists
-## re-plan their routes. Nothing is refunded (005 R7). False for a blueprint (use cancel) or an unknown id.
+## re-plan their routes. Nothing is refunded (005 R7). False for a blueprint
+## (use cancel) or an unknown id.
 func demolish(facility_id: int) -> bool:
 	var facility := find(facility_id)
 	if facility == null or not facility.built:

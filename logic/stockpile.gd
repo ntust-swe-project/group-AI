@@ -17,12 +17,21 @@ func amount(kind: Kind) -> int:
 	return _amounts[kind]
 
 
+## Raises by `n`. A negative `n` is a caller's bug: reported, nothing changes
+## (it would break "never below zero").
 func add(kind: Kind, n: int) -> void:
+	if n < 0:
+		push_error("Stockpile.add: n must not be negative (got %d)" % n)
+		return
 	_amounts[kind] += n
 
 
 ## True and lowered by `n`; false (nothing changes) if fewer than `n` are held.
+## A negative `n` is reported and refused the same way as in `add`.
 func take(kind: Kind, n: int) -> bool:
+	if n < 0:
+		push_error("Stockpile.take: n must not be negative (got %d)" % n)
+		return false
 	if _amounts[kind] < n:
 		return false
 	_amounts[kind] -= n
