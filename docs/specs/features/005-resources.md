@@ -11,11 +11,7 @@ vision-refs: ["3", "3.3", "4.4"]
 
 ### 這個 feature 要解決什麼
 
-到 004 為止，食物、水無限供應，建造免費，太空站沒有「發展」可言。本 feature 加入三種資源 —— **食物、水、材料** —— 與生產它們的三種設施：**水耕艙**、**水回收機**、**製造站**。殖民者吃喝要扣庫存，庫存見底就會餓死、渴死；蓋設施要花材料，蓋好的設施累加成太空站的**發展水準**（`DevelopmentLevel`）。生產只花工時，所以同樣 3 個人的工時要在「顧生存」與「拚發展」之間分配 —— 這就是 `SYSTEM.md` §1 那條迴圈裡「產出不足 → 發展停滯」的起點。
-
-玩家感受到的：開局手上只有一點存糧和材料，得趕快蓋生產設施；之後要一直想「多派人顧吃喝，還是多做材料去蓋東西」。
-
-**與其他 feature 的關係**：設施使用（組員 A，同時開發）把廁所換成衛生艙；005 不碰廁所與休息區，只改食物、水補給站。兩者都可能改 `FacilityCatalog`、`Wanderer`、HUD，**後 merge 的一方負責解衝突**（沿用 004 的約定）。
+到 004 為止，食物、水無限供應，建造免費，太空站沒有「發展」可言。本 feature 加入三種資源 —— **食物、水、材料** —— 與生產它們的三種設施：**水耕艙**、**水回收機**、**製造站**。殖民者吃喝要扣庫存，庫存見底就會餓死、渴死；蓋設施要花材料，蓋好的設施累加成太空站的**發展水準**（`DevelopmentLevel`）。生產只花工時，所以同樣 3 個人的工時要在「顧生存」與「拚發展」之間分配 —— 這就是 `SYSTEM.md` §1 那條迴圈裡「產出不足 → 發展停滯」的起點。玩家感受到的：開局手上只有一點存糧和材料，得趕快蓋生產設施；之後要一直想「多派人顧吃喝，還是多做材料去蓋東西」。**與其他 feature 的關係**：設施使用（組員 A，同時開發）把廁所換成衛生艙；005 不碰廁所與休息區，只改食物、水補給站。兩者都可能改 `FacilityCatalog`、`Wanderer`、HUD，**後 merge 的一方負責解衝突**（沿用 004 的約定）。
 
 ### 需求
 
@@ -31,6 +27,7 @@ vision-refs: ["3", "3.3", "4.4"]
 | R8 | 建造選單列出每種設施的成本；材料不夠的設施顯示為不可選 | I2 |
 | R9 | `DevelopmentLevel` = 目前所有**已完工**設施的成本總和。拆除會讓它下降；藍圖不算。這是全遊戲唯一的定義與來源 | 組內 2026-11-19；`SYSTEM.md` SC6、Q4、Q7；I7 |
 | R10 | 庫存、生產、成本、發展水準都是純邏輯，不繼承 `Node` | `SYSTEM.md` S1 |
+| R11 | 生產會累人：生產者 `Stress` 到 Q6 的上限就放下生產工作；`Stress` 沒降到 Q6 的下限以下的人不會被派去生產。只管優先度 ≤ 3 的生產工作：設成 4–5（比補給、建造急）的生產設施不看壓力；建造、補給、玩家指派照舊 | 組內 2026-11-20（S3 模擬：預設玩法約 1.5 天全員因壓力失能；Owner：更急的事可以超過上限做）；003 R4；I8 |
 
 ### 驗收條件
 
@@ -46,13 +43,14 @@ vision-refs: ["3", "3.3", "4.4"]
 | A8 | 庫存、生產、成本、發展水準相關的邏輯 class 都不是 `Node` | R10 | GUT |
 | A9 | 執行遊戲：上方看得到三種資源與發展水準；建造選單有「生產」分類並標成本，材料不夠的灰掉；蓋好水耕艙後有人自己去做，食物數字往上加 | R2、R4、R5、R8 | 手動 |
 | A10 | 執行遊戲：不蓋水回收機、等水用完，殖民者在水補給站等著，最後渴到失能；點生產設施能暫停，在做的人離開 | R3、R6 | 手動 |
+| A11 | 生產者 `Stress` 到上限時放下工作（不進佇列）；`Stress` 不低於下限的人不被派生產、低於後才會；優先度 4–5 的生產設施在 `Stress` 超過上限時照樣派人、不放人；建造工作不受影響；照 `main` 的接線讓 3 人在預設大廳蓋好三座生產設施後跑 3 遊戲天，沒有人因 `Stress` 失能 | R11 | GUT |
 
 ### 不做什麼
 
 - 自動化、目標庫存（「低於 N 才生產」）、回本與回收期（`SYSTEM.md` S4）—— 自動化 feature，要等危機
 - 搬運、貨艙、庫存容量、資源放在地圖上 —— 全站共用一個數字
 - 生產要消耗別的資源（例如製造站吃廢棄物）、`Waste` —— 危機 feature
-- 狀態差使生產變慢；一座設施多人同時生產；指定某人去生產；拆除退還
+- 壓力門檻套用到建造、補給、玩家指派；狀態差使生產變慢；一座設施多人同時生產；指定某人去生產；拆除退還
 - 廁所、休息區、衛生艙、睡眠艙的使用 —— 設施使用 feature（組員 A）
 - 補給船、事件給資源；結算畫面 —— 之後的 feature
 - 把 004 的派工抽成共用元件 —— 技術債，兩邊都 merge 後再做（見 Plan）
@@ -65,10 +63,11 @@ vision-refs: ["3", "3.3", "4.4"]
 | # | 問題 | 誰能答 | 狀態 |
 | --- | --- | --- | --- |
 | Q1 | 開局庫存？ | 組內 | 已答：食物 6、水 8 —— 約撐 2 天；材料 30 —— 剛好蓋三座生產設施（AI 建議，組員 B 採用） |
-| Q2 | 各設施成本與大小？ | 組內 | 已答：三種生產設施各 10 材料、2×2；衛生艙 5、睡眠艙 10，大小照 004（AI 建議，組員 B 採用） |
+| Q2 | 各設施成本、大小、建造時間？ | 組內 | 已答：三種生產設施各 10 材料、2×2、蓋 0.2 天（同 004）；衛生艙 5、睡眠艙 10，大小照 004（AI 建議，組員 B 採用） |
 | Q3 | 產 1 份要多久？生產工作預設優先度？ | 組內 | 已答：三種都 0.1 天（30 秒），一人全天可產 10 份；優先度預設 2，比補給與建造的 3 低，閒人才會去做（AI 建議，組員 B 採用） |
-| Q4 | 生產設施蓋多久？ | 組內 | 已答：照 004 的 0.2 天（AI 建議，組員 B 採用） |
+| Q4 | （併入 Q2，編號不重用） | — | — |
 | Q5 | `SYSTEM.md` §2 新增共用概念「資源庫存 `Stockpile`」，並註明 `DevelopmentLevel` 由 005 定義？ | 組員 A ＋ B | 已答：是（組內 2026-11-20），本 branch 一併修改 `SYSTEM.md` §2 |
+| Q6 | R11 的壓力上限與下限？ | 組內 | 已答：到 70 放下、低於 40 才再接；優先度 4–5 的生產不受限（AI 建議 70／40，組員 B 採用並加上「更急的可超過」） |
 
 ### AI 提出、待人類決定
 
@@ -81,6 +80,7 @@ vision-refs: ["3", "3.3", "4.4"]
 | I5 | 生產設施可以暫停 | INV | 納入（R6） | 一直生產會讓壓力只升不降（003 R4），玩家需要讓人休息的手段 |
 | I6 | 放藍圖就扣材料，取消退回 | INV | 納入（R7） | 完工才扣的話，蓋到一半材料被別處用掉會卡住；先扣比較好懂 |
 | I7 | 發展水準＝已完工設施成本總和，拆除會減 | INV | 納入（R9） | 「蓋出來的東西」算分（組內 2026-11-19 選 B）；拆了就不在了 |
+| I8 | 壓力門檻只套用在生產工作 | INV | 納入（R11） | 生產是唯一「永遠有事做」的工作；建造會做完，補給是自救，玩家指派是玩家的決定 |
 
 ## Plan
 
@@ -88,14 +88,14 @@ vision-refs: ["3", "3.3", "4.4"]
 
 - **庫存與成本**：新 `Stockpile`（`enum Kind { FOOD, WATER, MATERIALS }`、`START`、`amount(kind) -> int`、`add(kind, n)`、`take(kind, n) -> bool` —— 不夠就 false 且不變）。`FacilityCatalog` 加三種生產設施、分類「生產」、`cost_of(kind) -> int`、`product_of(kind) -> int`（`Stockpile.Kind`，非生產設施 −1）。`Construction._init` 加可選的 `stockpile`（null＝免費，004 的測試不用改）：`can_afford(kind)`；`can_place` 也要買得起（虛線框才會變色）；`place` 扣、`cancel` 退；`development_level() -> int` 加總 `facilities()` 的成本 —— SC6 的唯一來源。
 - **補給扣庫存**：`Assignment` 加 `on_hold`（到點也不計時）與 `producing`。`Wanderer` 到點遇 `on_hold` 就站著等，加 `is_at_task() -> bool`。`ColonistCare._init` 加可選 `stockpile`：食物、水的補給工作建立時設 `on_hold`；每次 `advance` 在殖民者移動後，對「人在點上、`on_hold`」的工作 `take` 1 份，成功才解除並記入 `_paid`；完成的移出 `_paid`；迴圈後凡 `_paid` 裡已不是該人 `current` 的（被搶占、取消、失能、死亡）一律退回並恢復 `on_hold`。
-- **生產**：新 `Production`（做法 2：照抄 004 的派工，不改 `Construction`）。生產工作是帶 `facility_id` 的 `Assignment`（`producing = true`），所以沿用 004「搶占即丟、不進佇列、`Wanderer` 不計時」。`Facility` 加 `production_priority := 2`、`paused`、`output_done`。API：`assign_producers()`（優先度高→id 小，每座 ≤ 1 人）、`advance(seconds)`（站定才累加，滿 30 秒 `add` 1 份）、`set_priority()`、`set_paused()`、`producer_of()`、`progress_of()`、`demolish()`（先放人再呼叫 `Construction.demolish`）。`AssignmentBoard` 加 `create_production()`，同 `create_build()`。重複的約 40 行派工是技術債。
+- **生產**：新 `Production`（做法 2：照抄 004 的派工，不改 `Construction`）。生產工作是帶 `facility_id` 的 `Assignment`（`producing = true`），所以沿用 004「搶占即丟、不進佇列、`Wanderer` 不計時」。`Facility` 加 `production_priority := 2`、`paused`、`output_done`。API：`assign_producers()`（優先度高→id 小，每座 ≤ 1 人）、`advance(seconds)`（站定才累加，滿 30 秒 `add` 1 份）、`set_priority()`、`set_paused()`、`producer_of()`、`progress_of()`、`demolish()`（先放人再呼叫 `Construction.demolish`）。`AssignmentBoard` 加 `create_production()`，同 `create_build()`。重複的約 40 行派工是技術債。R11：`_init` 加可選 `colony`（null＝不看壓力），`STRESS_STOP := 70.0`、`STRESS_RESUME := 40.0`；`STRESS_EXEMPT_PRIORITY := 4`；優先度 < 4 的設施：`assign_producers()` 跳過 `Stress` ≥ 下限的人，`_release_stale()` 放掉 `Stress` ≥ 上限的生產者；`main` 傳入 `colony`。
 - **畫面**：HUD 上方資源列（三種庫存＋發展水準）。建造選單按鈕標成本、買不起 `disabled`，每幀更新。設施面板對完工的生產設施顯示產品、進度、優先度、暫停／恢復、拆除；殖民者面板的生產工作顯示「生產 ＜設施＞」、不給取消。`main` 建 `Stockpile`、`Production` 傳給各方，每幀在 `assign_builders()` 後呼叫 `production.advance()`、`assign_producers()`；拆除改走 `production.demolish()`。
 
 ### 要動的檔案
 
 | 檔案 | 新增／修改 | 做什麼 |
 | --- | --- | --- |
-| `logic/stockpile.gd`、`production.gd` | 新增 | 庫存；生產派工與產出 |
+| `logic/stockpile.gd`、`production.gd` | 新增 | 庫存；生產派工、產出、壓力門檻 |
 | `logic/facility_catalog.gd`、`facility.gd`、`construction.gd`、`assignment.gd`、`assignment_board.gd`、`wanderer.gd`、`colonist_care.gd` | 修改 | 成本與種類、生產欄位、扣退材料與發展水準、`on_hold`／`producing`、`create_production`、到點等待、補給扣退庫存 |
 | `scenes/main.gd`、`hud.tscn`／`.gd`、`build_menu.gd` | 修改 | 接線、資源列、成本與灰掉、生產設施面板 |
 | `test/test_stockpile.gd`、`test_build_cost.gd`、`test_supply_stock.gd`、`test_production.gd` 新增；`test_logic_is_pure.gd`、`test_hud.gd`、`test_build_menu.gd`、`test_facility_panel.gd` 修改 | 新增／修改 | A1–A8；A9、A10 的接線 |
@@ -112,14 +112,15 @@ vision-refs: ["3", "3.3", "4.4"]
 
 ### Tasks
 
-- [ ] **T1** — `Stockpile`、新設施種類與成本、`Construction` 扣退材料、`can_place` 含買得起、`development_level()`；純度測試 ／ 驗收：A1、A5、A6、A8
-- [ ] **T2** — 補給扣庫存：`on_hold`、到點等待、開始時扣、被叫走／失能／死亡退回、兩人搶最後 1 份 ／ 驗收：A2
-- [ ] **T3** — `Production`：派工、產出、進度保留、優先度、暫停、拆除放人、四周被堵時不派人；不變式 helper ／ 驗收：A3、A4、A7
-- [ ] **T4** — 資源列、建造選單成本與灰掉、生產設施面板、生產工作列；`main` 接線；001–004 全部測試重跑（`main` 現在有成本，舊的場景測試可能要給足材料）／ 驗收：A9、A10
+- [x] **T1** — `Stockpile`、新設施種類與成本、`Construction` 扣退材料、`can_place` 含買得起、`development_level()`；純度測試 ／ 驗收：A1、A5、A6、A8
+- [x] **T2** — 補給扣庫存：`on_hold`、到點等待、開始時扣、被叫走／失能／死亡退回、兩人搶最後 1 份 ／ 驗收：A2
+- [x] **T3** — `Production`：派工、產出、進度保留、優先度、暫停、拆除放人、四周被堵時不派人；不變式 helper ／ 驗收：A3、A4、A7
+- [x] **T4** — 資源列、建造選單成本與灰掉、生產設施面板、生產工作列；`main` 接線；001–004 全部測試重跑（`main` 現在有成本，舊的場景測試可能要給足材料）／ 驗收：A9、A10
+- [ ] **T5** — R11 壓力門檻（`Production` 加 `colony`、上下限、`main` 傳入）＋ 3 天模擬測試；順手修 S3 指出的兩條空斷言（`test_production.gd` 進度接著算、`test_production_panel.gd`「發展 10」）／ 驗收：A11、A3
 
 ## Gate A — 實作前核准
 
-Owner：組員 B　日期：2026-11-20　結果：核准 （第 1 次，
+Owner：組員 B　日期：2026-11-20　結果：核准（第 2 次，重簽 changelog 第 2 列：R11 壓力門檻）
 
 - [x] Owner 讀過 feature 檔全文（不是摘要）
 - [x] 每條需求追得到來源；追不到的已標 `INV` 並決定去留
@@ -129,7 +130,7 @@ Owner：組員 B　日期：2026-11-20　結果：核准 （第 1 次，
 - [x] Godot API 全部對 4.7 文件驗過，無 `unverified`
 - [x] 開放問題清零，或標「延後到 NNN」
 
-看了什麼、注意到什麼（一到三句，不要只打勾）：資源同時撐生存（吃喝扣庫存、見底會死）與發展（蓋設施花材料、完工成本累加成發展水準），生產只花工時，取捨落在人手分配。數值 Q1–Q4 照 AI 建議採用、I1–I7 全部納入；自動化、搬運、廢棄物留給之後的 feature。生產照抄 004 派工、不改 `Construction`，重複的派工記為技術債；`SYSTEM.md` §2 同步新增 `Stockpile`。
+看了什麼、注意到什麼（一到三句，不要只打勾）：資源同時撐生存（吃喝扣庫存、見底會死）與發展（蓋設施花材料、完工成本累加成發展水準），生產只花工時，取捨落在人手分配。數值 Q1–Q4 照 AI 建議採用、I1–I7 全部納入；自動化、搬運、廢棄物留給之後的 feature。生產照抄 004 派工、不改 `Construction`，重複的派工記為技術債；`SYSTEM.md` §2 同步新增 `Stockpile`。第 2 次：S3 模擬發現預設玩法約 1.5 天全員因壓力失能，加 R11 —— 生產者壓力到 70 放下、低於 40 才再接，優先度 4–5 的生產可超過；只管生產，其他工作不受影響。
 
 ## Gate B — merge 前
 
@@ -146,3 +147,4 @@ PR：#__　Owner 自審日期：____　退回次數：__
 | 日期 | 改了什麼 | 為什麼 |
 | --- | --- | --- |
 | 2026-11-20 | 初版 | 立項 |
+| 2026-11-20 | 新增 R11（優先度 4–5 的生產不受限）、A11、Q6（70／40）、I8、T5；Q4 併入 Q2；勾 T1–T4 | S3 Verifier 模擬：照 Q1「三座生產設施」與預設值，3 人一直生產、約 1.5 天全員因 `Stress` 失能（003 的殖民者壓力高也不會自己休息）。組員 B 選「壓力高就不接生產」。另修 S3 指出的空斷言 |
