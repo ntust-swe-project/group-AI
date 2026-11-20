@@ -13,14 +13,27 @@ const SUPPLY_PRIORITY := 3
 var _board: AssignmentBoard
 var _points: SupplyPoints
 var _colony: Colony
+var _stockpile: Stockpile  # null: supplies are free, as in feature 003
 var _colonists := {}  # colonist id -> Colonist
 var _walkers := {}  # colonist id -> Wanderer
+var _paid := {}  # task id -> [Assignment, colonist id]: portions taken and not yet finished
 
 
-func _init(board: AssignmentBoard, points: SupplyPoints, colony: Colony) -> void:
+## Which stock a need's refill draws on (005, R3). Relief and rest use none.
+const STOCK_FOR_NEED := {
+	&"hunger": Stockpile.Kind.FOOD,
+	&"thirst": Stockpile.Kind.WATER,
+}
+
+
+## With a `stockpile`, food and water supply work costs one portion each
+## (005, R3); without one it stays free (feature 003).
+func _init(board: AssignmentBoard, points: SupplyPoints, colony: Colony,
+		stockpile: Stockpile = null) -> void:
 	_board = board
 	_points = points
 	_colony = colony
+	_stockpile = stockpile
 
 
 ## The colonist must already be registered with the board under the same id.
@@ -57,12 +70,42 @@ func advance(seconds: float) -> Array[int]:
 		for done in walker.advance(seconds):
 			if done.need != &"":
 				colonist.physiology.set(done.need, Physiology.FULL)
+			_paid.erase(done.id)
+		_pay_for_supply(id, walker)
 		_ask_for_supplies(id, colonist, walker)
+	_refund_unfinished()
 	for id in died:
 		_colonists.erase(id)
 		_walkers.erase(id)
 		_colony.remove_colonist(id)
 	return died
+
+
+## A colonist waiting at a food or water point pays one portion to start; if
+## the stock is empty the task stays on hold and they keep waiting (005, R3).
+## Two colonists after the last portion: whoever comes first in the order wins.
+func _pay_for_supply(id: int, walker: Wanderer) -> void:
+	var task := walker.tasks.current
+	if _stockpile == null or task == null or not task.on_hold or not walker.is_at_task():
+		return
+	if _stockpile.take(STOCK_FOR_NEED[task.need], 1):
+		task.on_hold = false
+		_paid[task.id] = [task, id]
+
+
+## A paid task that is no longer its colonist's current one was pushed aside,
+## cancelled, or its colonist broke down or died: give the portion back and
+## put the task on hold again, so it pays again when resumed (005, R3).
+func _refund_unfinished() -> void:
+	if _stockpile == null:
+		return
+	for task_id in _paid.keys():
+		var task: Assignment = _paid[task_id][0]
+		var walker: Wanderer = _walkers[_paid[task_id][1]]
+		if walker.tasks.current != task:
+			_stockpile.add(STOCK_FOR_NEED[task.need], 1)
+			task.on_hold = true
+			_paid.erase(task_id)
 
 
 ## Any body need empty, Stress full, or Mood empty (R8, Q7).
@@ -100,7 +143,9 @@ func _is_resting(walker: Wanderer) -> bool:
 func _ask_for_supplies(id: int, colonist: Colonist, walker: Wanderer) -> void:
 	for need in SupplyPoints.NEEDS:
 		if colonist.physiology.get(need) < Physiology.LOW and not _has_supply_task(walker, need):
-			_board.create(id, _points.cell_for(need), SUPPLY_PRIORITY, need, _points.work_seconds(need))
+			var task := _board.create(id, _points.cell_for(need), SUPPLY_PRIORITY, need, _points.work_seconds(need))
+			if task != null and _stockpile != null and STOCK_FOR_NEED.has(need):
+				task.on_hold = true
 
 
 func _has_supply_task(walker: Wanderer, need: StringName) -> bool:

@@ -21,6 +21,9 @@ var priority: int
 var need: StringName
 var work_seconds: float
 var facility_id := NO_FACILITY  # the blueprint being built, for build jobs
+## Feature 005, R3: a supply task waiting for its portion from the stockpile.
+## Not timed even when the colonist stands at its cell.
+var on_hold := false
 
 
 func _init(assignment_id: int, target_cell: Vector2i, assignment_priority: int,
