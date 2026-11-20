@@ -55,10 +55,15 @@ func _texts(list: Control) -> Array[String]:
 	return texts
 
 
+## Facility buttons read "名稱（成本）" since feature 005, so match on the name.
 func _choose(kind_text: String) -> void:
 	menu.get_node("%BuildButton").pressed.emit()
 	_button(menu.get_node("%CategoryList"), "生活").pressed.emit()
-	_button(menu.get_node("%KindList"), kind_text).pressed.emit()
+	for button in menu.get_node("%KindList").get_children():
+		if button.text.begins_with(kind_text + "（"):
+			button.pressed.emit()
+			return
+	fail_test("no button for " + kind_text)
 
 
 ## Near the middle of the hall, but below it: the very middle is feature 003's
@@ -94,11 +99,11 @@ func test_only_the_build_button_shows_at_start():
 func test_build_opens_the_categories_and_a_category_its_facilities():
 	menu.get_node("%BuildButton").pressed.emit()
 	assert_true(menu.get_node("%CategoryList").visible)
-	assert_eq(_texts(menu.get_node("%CategoryList")), ["生活"] as Array[String])
+	assert_eq(_texts(menu.get_node("%CategoryList")), ["生活", "生產"] as Array[String])
 	assert_false(menu.get_node("%KindList").visible)
 	_button(menu.get_node("%CategoryList"), "生活").pressed.emit()
 	assert_true(menu.get_node("%KindList").visible)
-	assert_eq(_texts(menu.get_node("%KindList")), ["衛生艙", "睡眠艙"] as Array[String])
+	assert_eq(_texts(menu.get_node("%KindList")), ["衛生艙（5）", "睡眠艙（10）"] as Array[String])
 
 
 func test_the_lists_open_above_and_left_of_the_build_button():

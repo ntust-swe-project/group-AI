@@ -59,6 +59,8 @@ func advance(seconds: float) -> Array[Assignment]:
 				continue
 			if task.is_build():
 				return done  # building; Construction counts the time
+			if task.on_hold:
+				return done  # waiting at the point for stock (feature 005, R3)
 			var used := minf(time_left, task.work_seconds - _worked)
 			_worked += used
 			time_left -= used
@@ -84,6 +86,12 @@ func advance(seconds: float) -> Array[Assignment]:
 func is_working() -> bool:
 	var task := tasks.current
 	return task != null and task.is_build() and _path.is_empty() and cell == task.cell
+
+
+## True while standing at the current task's cell with no route left (005, R3).
+func is_at_task() -> bool:
+	var task := tasks.current
+	return task != null and _path.is_empty() and cell == task.cell
 
 
 ## The current task is done (Construction finished the build): start the next.

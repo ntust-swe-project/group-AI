@@ -8,6 +8,7 @@ signal cancel_task_requested(task_id: int)
 signal facility_priority_requested(facility_id: int, priority: int)
 signal facility_cancel_requested(facility_id: int)
 signal facility_demolish_requested(facility_id: int)
+signal facility_pause_requested(facility_id: int, paused: bool)
 
 const TASK_FONT_SIZE := 14
 
@@ -17,9 +18,13 @@ const BODY_NEEDS := [[&"hunger", "吃"], [&"thirst", "喝"], [&"body_temp", "體
 const MIND_NEEDS := [[&"stress", "壓力"], [&"mood", "心情"]]
 ## How supply work is listed in the queue instead of a cell (I7), named as in R7.
 const SUPPLY_NAMES := {&"hunger": "食物補給站", &"thirst": "水補給站", &"relief": "廁所", &"stamina": "休息區"}
+## What a production facility makes, by Stockpile.Kind (feature 005, R6).
+const PRODUCT_NAMES := {Stockpile.Kind.FOOD: "食物", Stockpile.Kind.WATER: "水", Stockpile.Kind.MATERIALS: "材料"}
 
 var clock: DayClock
 var construction: Construction  # for the facility section and build job names (feature 004)
+var stockpile: Stockpile  # for the resource bar (feature 005, R2)
+var production: Production  # for the production section of the facility panel (feature 005, R6)
 
 var _shown_colonist: Colonist  # the colonist in the info panel, if any
 var _shown_tasks: TaskQueue  # their tasks
@@ -39,6 +44,7 @@ func _ready() -> void:
 	%FacilityPriority.item_selected.connect(_on_facility_priority_selected)
 	%FacilityCancel.pressed.connect(func(): facility_cancel_requested.emit(_shown_facility))
 	%FacilityDemolish.pressed.connect(func(): facility_demolish_requested.emit(_shown_facility))
+	%FacilityPause.pressed.connect(_on_pause_production_pressed)
 
 
 func _process(_delta: float) -> void:
@@ -52,6 +58,10 @@ func _process(_delta: float) -> void:
 
 
 func refresh() -> void:
+	if stockpile and construction:
+		%ResourceLabel.text = "食物 %d　水 %d　材料 %d　發展 %d" % [
+			stockpile.amount(Stockpile.Kind.FOOD), stockpile.amount(Stockpile.Kind.WATER),
+			stockpile.amount(Stockpile.Kind.MATERIALS), construction.development_level()]
 	if clock == null:
 		return
 	var day_text := "第 %d 天 / %d" % [clock.day, DayClock.FINAL_DAY]
@@ -116,18 +126,55 @@ func _update_facility() -> void:
 		_lay_out_facility(facility)
 	elif not facility.built:
 		%FacilityState.text = _progress_text(facility)
+	elif _produces(facility):
+		%FacilityState.text = _production_text(facility)
+		%FacilityPause.text = _pause_text(facility)
 
 
 func _lay_out_facility(facility: Facility) -> void:
 	_shown_built = facility.built
 	%InfoTitle.text = "設施" if facility.built else "藍圖"
-	%FacilityState.text = "已完工" if facility.built else _progress_text(facility)
-	%PriorityRow.visible = not facility.built
+	var producing := _produces(facility)
+	if not facility.built:
+		%FacilityState.text = _progress_text(facility)
+	elif producing:
+		%FacilityState.text = _production_text(facility)
+	else:
+		%FacilityState.text = "已完工"
+	%PriorityRow.visible = not facility.built or producing
 	%FacilityCancel.visible = not facility.built
 	%FacilityDemolish.visible = facility.built
-	if not facility.built:
+	%FacilityPause.visible = producing
+	if producing:
+		%FacilityPriority.select(%FacilityPriority.get_item_index(facility.production_priority))
+		%FacilityPause.text = _pause_text(facility)
+	elif not facility.built:
 		%FacilityPriority.select(%FacilityPriority.get_item_index(facility.priority))
 	%InfoPanel.reset_size()
+
+
+## A finished facility that makes something (feature 005, R6).
+func _produces(facility: Facility) -> bool:
+	return facility.built and production != null and FacilityCatalog.product_of(facility.kind) != -1
+
+
+func _production_text(facility: Facility) -> String:
+	var text := "生產 %s · 進度 %d%%" % [
+		PRODUCT_NAMES[FacilityCatalog.product_of(facility.kind)],
+		floori(production.progress_of(facility.id) * 100.0)]
+	if facility.paused:
+		text += "（已暫停）"
+	return text
+
+
+func _pause_text(facility: Facility) -> String:
+	return "恢復生產" if facility.paused else "暫停生產"
+
+
+func _on_pause_production_pressed() -> void:
+	var facility := construction.find(_shown_facility) if construction else null
+	if facility:
+		facility_pause_requested.emit(_shown_facility, not facility.paused)
 
 
 func _progress_text(facility: Facility) -> String:
@@ -239,6 +286,12 @@ func _add_task_row(task: Assignment) -> void:
 	label.add_theme_font_size_override("font_size", TASK_FONT_SIZE)
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(label)
+	if task.producing:
+		# Production jobs are managed on the facility too (feature 005, R6).
+		var maker := construction.find(task.facility_id) if construction else null
+		var maker_name := FacilityCatalog.display_name(maker.kind) if maker else "設施"
+		label.text = "  生產 %s · 優先度 %d" % [maker_name, task.priority]
+		return
 	if task.is_build():
 		# Build jobs are managed on the blueprint, not here (feature 004, R8, I4).
 		var facility := construction.find(task.facility_id) if construction else null

@@ -11,8 +11,10 @@ var colony := Colony.new()
 var wanderers := {}  # colonist id -> Wanderer
 var board := AssignmentBoard.new(grid)
 var points := SupplyPoints.new()
-var care := ColonistCare.new(board, points, colony)
-var construction := Construction.new(grid, board)
+var stockpile := Stockpile.new()  # food, water and materials (feature 005)
+var care := ColonistCare.new(board, points, colony, stockpile)
+var construction := Construction.new(grid, board, stockpile)
+var production := Production.new(construction, board, grid, stockpile, colony)
 
 var _views := {}  # colonist id -> colonist view node
 var _selected_id := -1  # the colonist in the info panel, or -1
@@ -41,7 +43,11 @@ func _ready() -> void:
 		assign_menu.close())
 	station_map.construction = construction
 	hud.construction = construction
-	hud.facility_priority_requested.connect(construction.set_priority)
+	hud.stockpile = stockpile
+	hud.production = production
+	build_menu.construction = construction
+	hud.facility_priority_requested.connect(_on_facility_priority_requested)
+	hud.facility_pause_requested.connect(production.set_paused)
 	hud.facility_cancel_requested.connect(_on_facility_cancel_requested)
 	hud.facility_demolish_requested.connect(_on_facility_demolish_requested)
 	hud.refresh()
@@ -61,6 +67,9 @@ func _process(delta: float) -> void:
 	# Building counts game time too, so nothing is built while paused (004 A4).
 	construction.advance(game_seconds)
 	construction.assign_builders()
+	# Production counts game time too; then idle colonists pick up its jobs (005 R5).
+	production.advance(game_seconds)
+	production.assign_producers()
 	for id in wanderers:
 		_views[id].position = station_map.cell_to_pixel(wanderers[id].position())
 
@@ -201,8 +210,18 @@ func _on_facility_cancel_requested(facility_id: int) -> void:
 
 
 func _on_facility_demolish_requested(facility_id: int) -> void:
-	construction.demolish(facility_id)
+	production.demolish(facility_id)  # also lets go of its producer (feature 005, R6)
 	hud.hide_info()
+
+
+## A built facility keeps its production priority, a blueprint its build
+## priority (feature 005, R6).
+func _on_facility_priority_requested(facility_id: int, priority: int) -> void:
+	var facility := construction.find(facility_id)
+	if facility and facility.built:
+		production.set_priority(facility_id, priority)
+	else:
+		construction.set_priority(facility_id, priority)
 
 
 ## The kind being placed, or -1 when not placing.

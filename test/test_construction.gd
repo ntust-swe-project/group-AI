@@ -31,7 +31,7 @@ func _cells(list: Array) -> Array[Vector2i]:
 # --- catalog (R1, Q1) ---
 
 func test_the_living_category_has_both_facilities():
-	assert_eq(FacilityCatalog.CATEGORIES, ["生活"] as Array[String])
+	assert_eq(FacilityCatalog.CATEGORIES, ["生活", "生產"] as Array[String])
 	assert_eq(FacilityCatalog.kinds_in("生活"), [STALL, POD] as Array[FacilityCatalog.Kind])
 
 

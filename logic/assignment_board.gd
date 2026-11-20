@@ -74,6 +74,15 @@ func create_build(colonist_id: int, cell: Vector2i, priority: int, facility_id: 
 	return task
 
 
+## Like `create_build`, but a production job for built facility `facility_id`
+## (feature 005, R5): same contract, never queued, null unless more urgent.
+func create_production(colonist_id: int, cell: Vector2i, priority: int, facility_id: int) -> Assignment:
+	var task := create_build(colonist_id, cell, priority, facility_id)
+	if task:
+		task.producing = true
+	return task
+
+
 ## Colonist id -> Wanderer for everyone registered, in the order they joined. A copy.
 func walkers() -> Dictionary:
 	return _walkers.duplicate()
