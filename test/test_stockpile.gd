@@ -39,3 +39,15 @@ func test_taking_more_than_held_fails_and_changes_nothing():
 func test_there_is_no_upper_limit():
 	stock.add(Stockpile.Kind.MATERIALS, 100000)
 	assert_eq(stock.amount(Stockpile.Kind.MATERIALS), 100030)
+
+
+func test_adding_a_negative_amount_is_reported_and_changes_nothing():
+	stock.add(Stockpile.Kind.FOOD, -5)
+	assert_push_error("must not be negative")
+	assert_eq(stock.amount(Stockpile.Kind.FOOD), 6)
+
+
+func test_taking_a_negative_amount_is_reported_and_refused():
+	assert_false(stock.take(Stockpile.Kind.FOOD, -5))
+	assert_push_error("must not be negative")
+	assert_eq(stock.amount(Stockpile.Kind.FOOD), 6)

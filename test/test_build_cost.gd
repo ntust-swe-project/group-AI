@@ -111,6 +111,16 @@ func test_cancelling_a_blueprint_refunds_everything():
 	assert_eq(_materials(), 30)
 
 
+func test_cancelling_a_partly_built_blueprint_still_refunds_everything():
+	var bay := construction.place(BAY, Vector2i(2, 2))
+	construction.assign_builders()
+	_run(ONE_BUILDER / 2.0)
+	assert_gt(construction.progress_of(bay.id), 0.0, "partly built")
+	assert_lt(construction.progress_of(bay.id), 1.0, "not finished")
+	assert_true(construction.cancel(bay.id))
+	assert_eq(_materials(), 30)
+
+
 func test_demolishing_refunds_nothing():
 	var stall := _build(STALL, Vector2i(5, 2))
 	assert_eq(_materials(), 25)
