@@ -1,7 +1,7 @@
 ---
 feature: 005-resources
 owner: 組員 B
-status: approved       # draft | approved | done
+status: done           # draft | approved | done
 vision-refs: ["3", "3.3", "4.4"]
 ---
 
@@ -132,7 +132,7 @@ Owner：組員 B　日期：2026-11-20　結果：核准（第 2 次，重簽 ch
 
 ## Gate B — merge 前
 
-PR：#__　Owner 自審日期：____　退回次數：__
+PR：#20　Owner 自審日期：2026-11-20　退回次數：0
 
 ## 驗收結果
 
