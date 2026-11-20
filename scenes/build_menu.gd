@@ -9,6 +9,12 @@ signal opened  # 建造 was pressed and the categories are now showing
 
 const BUTTON_SIZE := Vector2(120, 36)
 
+## Set by main: costs are charged and unaffordable facilities greyed out
+## (feature 005, R8). Without it every button stays enabled.
+var construction: Construction
+
+var _kind_buttons := {}  # FacilityCatalog.Kind -> Button, for the list now showing
+
 
 func _ready() -> void:
 	%BuildButton.pressed.connect(toggle)
@@ -27,6 +33,11 @@ func toggle() -> void:
 		opened.emit()
 
 
+func _process(_delta: float) -> void:
+	if %KindList.visible:
+		_update_affordable()
+
+
 func close() -> void:
 	%CategoryList.visible = false
 	%KindList.visible = false
@@ -36,11 +47,21 @@ func open_category(category: String) -> void:
 	for child in %KindList.get_children():
 		%KindList.remove_child(child)
 		child.queue_free()
+	_kind_buttons.clear()
 	for kind in FacilityCatalog.kinds_in(category):
-		var button := _make_button(FacilityCatalog.display_name(kind))
+		var button := _make_button("%s（%d）" % [FacilityCatalog.display_name(kind), FacilityCatalog.cost_of(kind)])
 		button.pressed.connect(_on_kind_pressed.bind(kind))
 		%KindList.add_child(button)
+		_kind_buttons[kind] = button
 	%KindList.visible = true
+	_update_affordable()
+
+
+## R8: a facility the materials do not cover cannot be chosen. Every frame,
+## because materials change while the list is open.
+func _update_affordable() -> void:
+	for kind in _kind_buttons:
+		_kind_buttons[kind].disabled = construction != null and not construction.can_afford(kind)
 
 
 func _on_kind_pressed(kind: FacilityCatalog.Kind) -> void:
