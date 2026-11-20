@@ -2,7 +2,8 @@ class_name FacilityCatalog
 extends RefCounted
 
 ## What can be built (feature 004, R1; 005 R4, R7): name, build-menu category,
-## size, build time, material cost and what it produces. Sizes are width x height in cells; there is no rotating (Q1).
+## size, build time, material cost and what it produces. Sizes are width x
+## height in cells; there is no rotating (Q1).
 
 enum Kind { HYGIENE_STALL, SLEEP_POD, HYDROPONICS_BAY, WATER_RECYCLER, FABRICATOR }
 

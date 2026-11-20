@@ -76,6 +76,15 @@ func test_pulled_away_halfway_refunds_the_food():
 	assert_true(_supply_task(walker, &"hunger").on_hold, "back in line on hold")
 
 
+func test_a_player_cancelling_a_paid_supply_refunds_the_food():
+	_ann_hungry_and_paid()
+	var task := _supply_task(walker, &"hunger")
+	assert_false(task.on_hold, "paid and under way")
+	assert_true(board.cancel(task.id))
+	care.advance(0.0)
+	assert_eq(stock.amount(Stockpile.Kind.FOOD), 6, "refunded")
+
+
 func test_a_resumed_supply_pays_again_exactly_once():
 	_ann_hungry_and_paid()
 	board.create(ann.id, Vector2i(3, 1), 4)
@@ -145,7 +154,9 @@ func test_incapacitation_refunds_a_paid_supply():
 	assert_eq(stock.amount(Stockpile.Kind.FOOD), 6)
 
 
-func test_death_refunds_a_paid_supply():
+# Death only comes through breaking down (003 R9): here both happen in the same
+# advance, so this pins that path, not a separate "death" refund.
+func test_breaking_down_and_dying_in_one_step_refunds_a_paid_supply():
 	_ann_hungry_and_paid()
 	ann.physiology.hunger = 0.0
 	ann.physiology.thirst = 0.0

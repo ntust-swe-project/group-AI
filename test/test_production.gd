@@ -352,13 +352,13 @@ func test_a_more_urgent_build_job_pulls_the_producer_away_and_is_not_queued():
 
 
 func test_after_the_preempting_job_the_facility_is_handed_out_again():
-	var ann := _add(1, Vector2i(7, 3))
+	_add(1, Vector2i(7, 3))
 	var bay := _built(BAY, Vector2i(8, 3))
 	production.assign_producers()
-	construction.place(POD, Vector2i(3, 5))
+	var pod := construction.place(POD, Vector2i(3, 5))
 	_run(300.0)
+	assert_true(pod.built, "the preempting build finished")
 	assert_eq(production.producer_of(bay.id), 1)
-	assert_not_null(ann)
 
 
 func test_pausing_releases_the_producer_and_nobody_takes_it():
@@ -430,20 +430,34 @@ func test_a_direct_construction_demolish_is_cleaned_up_by_assign_producers():
 
 
 func test_a_whole_scenario_leaves_no_zombies():
-	var ann := _add(1, Vector2i(3, 3))
+	_add(1, Vector2i(3, 3))
 	_add(2, Vector2i(3, 5))
 	var bay := _built(BAY, Vector2i(8, 3))
 	_run(5.0)  # assign, produce
-	construction.place(POD, Vector2i(3, 1))  # preempt
+	assert_ne(production.producer_of(bay.id), -1, "someone produces")
+	var pod := construction.place(POD, Vector2i(3, 1))  # preempt: a 3 build beats the 2 job
 	_run(5.0)
+	assert_false(construction.builders_of(pod.id).is_empty(), "the blueprint got builders")
 	production.set_priority(bay.id, 5)  # change priority
+	_assert_no_zombies()
 	_run(5.0)
+	assert_eq(bay.production_priority, 5)
+	assert_ne(production.producer_of(bay.id), -1, "priority 5 gets a producer")
 	production.set_paused(bay.id, true)  # pause
+	_assert_no_zombies()
+	assert_eq(production.producer_of(bay.id), -1, "pausing lets go at once")
 	_run(5.0)
+	assert_eq(production.producer_of(bay.id), -1, "nobody takes a paused facility")
 	production.set_paused(bay.id, false)  # resume
 	_run(5.0)
-	board.create(1, Vector2i(2, 2), 5)  # a 5 order
+	var producer := production.producer_of(bay.id)
+	assert_ne(producer, -1, "resumed")
+	var order := board.create(producer, Vector2i(2, 2), 5)  # a 5 order, no more urgent than the job
+	_assert_no_zombies()
+	assert_true(walkers[producer].tasks.queued().has(order), "it waits behind the priority-5 job")
 	_run(5.0)
 	production.demolish(bay.id)  # demolish
+	_assert_no_zombies()
+	assert_eq(production.producer_of(bay.id), -1, "demolishing lets go at once")
 	_run(5.0)
-	assert_not_null(ann)
+	assert_null(construction.find(bay.id))
