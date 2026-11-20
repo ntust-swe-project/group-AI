@@ -104,11 +104,9 @@ vision-refs: ["3", "3.3", "4.4"]
 
 ### 引擎 API 驗證
 
-對本機 Godot 4.7.2 `--dump-extension-api` 核對（2026-11-20）；001–004 已驗證的不重列。
-
 | API | 狀態 | 文件連結 |
 | --- | --- | --- |
-| `BaseButton.disabled` | 已驗證 | `docs.godotengine.org/en/4.7/classes/class_basebutton.html` |
+| `BaseButton.disabled`（001–004 已驗證的不重列） | 已驗證：本機 4.7.2 `--dump-extension-api`，2026-11-20 | `docs.godotengine.org/en/4.7/classes/class_basebutton.html` |
 
 ### Tasks
 
@@ -116,7 +114,7 @@ vision-refs: ["3", "3.3", "4.4"]
 - [x] **T2** — 補給扣庫存：`on_hold`、到點等待、開始時扣、被叫走／失能／死亡退回、兩人搶最後 1 份 ／ 驗收：A2
 - [x] **T3** — `Production`：派工、產出、進度保留、優先度、暫停、拆除放人、四周被堵時不派人；不變式 helper ／ 驗收：A3、A4、A7
 - [x] **T4** — 資源列、建造選單成本與灰掉、生產設施面板、生產工作列；`main` 接線；001–004 全部測試重跑（`main` 現在有成本，舊的場景測試可能要給足材料）／ 驗收：A9、A10
-- [ ] **T5** — R11 壓力門檻（`Production` 加 `colony`、上下限、`main` 傳入）＋ 3 天模擬測試；順手修 S3 指出的兩條空斷言（`test_production.gd` 進度接著算、`test_production_panel.gd`「發展 10」）／ 驗收：A11、A3
+- [x] **T5** — R11 壓力門檻（`Production` 加 `colony`、上下限、`main` 傳入）＋ 3 天模擬測試；順手修 S3 指出的兩條空斷言（`test_production.gd` 進度接著算、`test_production_panel.gd`「發展 10」）／ 驗收：A11、A3
 
 ## Gate A — 實作前核准
 
@@ -140,7 +138,9 @@ PR：#__　Owner 自審日期：____　退回次數：__
 
 | 驗收條件 | 過 | 怎麼驗的 |
 | --- | --- | --- |
-| | | |
+| A1–A8 | ✅ | GUT；S3 Verifier（新 session）於 `843c5d7` 逐條對到測試，422/422；T5 後 435/435（`8bd9a61`，跑兩次） |
+| A9、A10 | ✅ | 組員 B 於 Godot 手動驗收（2026-11-20） |
+| A11 | ✅ | GUT `test_production_stress`、`test_production_simulation`（兩個種子各跑 3 天：無人失能、最高 `Stress` 81.7、三座設施各生產 212–323 秒）；拿掉門檻時模擬失敗（全員 `Stress` 100） |
 
 ## Changelog
 
