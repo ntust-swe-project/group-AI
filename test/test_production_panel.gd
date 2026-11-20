@@ -89,7 +89,7 @@ func test_placing_a_blueprint_lowers_the_materials():
 func test_a_finished_facility_raises_the_development_level():
 	_open_farm()
 	hud._process(0.0)
-	assert_string_contains(_label(), "發展 1")
+	assert_eq(_label(), "食物 6　水 8　材料 %d　發展 10" % (30 - FacilityCatalog.cost_of(FARM)))
 
 
 # --- build menu (R4, R8) ---

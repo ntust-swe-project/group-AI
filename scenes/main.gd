@@ -14,7 +14,7 @@ var points := SupplyPoints.new()
 var stockpile := Stockpile.new()  # food, water and materials (feature 005)
 var care := ColonistCare.new(board, points, colony, stockpile)
 var construction := Construction.new(grid, board, stockpile)
-var production := Production.new(construction, board, grid, stockpile)
+var production := Production.new(construction, board, grid, stockpile, colony)
 
 var _views := {}  # colonist id -> colonist view node
 var _selected_id := -1  # the colonist in the info panel, or -1

@@ -12,25 +12,36 @@ extends RefCounted
 
 const DEFAULT_PRIORITY := 2  # Q3
 const SECONDS_PER_UNIT := 0.1 * DayClock.SECONDS_PER_DAY  # Q3: one unit per 0.1 day of work
+## R11, Q6: producing wears people out. A producer at STRESS_STOP puts the job
+## down; nobody at or above STRESS_RESUME is sent to produce. Facilities with a
+## priority of STRESS_EXEMPT_PRIORITY or more (more urgent than supplies and
+## building) ignore both limits.
+const STRESS_STOP := 70.0
+const STRESS_RESUME := 40.0
+const STRESS_EXEMPT_PRIORITY := 4
 
 var _construction: Construction
 var _board: AssignmentBoard
 var _grid: StationGrid
 var _stockpile: Stockpile
+var _colony: Colony  # null: Stress is not looked at (R11)
 
 
-func _init(construction: Construction, board: AssignmentBoard, grid: StationGrid, stockpile: Stockpile) -> void:
+func _init(construction: Construction, board: AssignmentBoard, grid: StationGrid, stockpile: Stockpile,
+		colony: Colony = null) -> void:
 	_construction = construction
 	_board = board
 	_grid = grid
 	_stockpile = stockpile
+	_colony = colony
 
 
 ## R5: gives each built, unpaused production facility without a producer one,
 ## most urgent facility first (smaller id on a tie). A colonist only takes a
 ## job more urgent than what they do now, and the one with the shortest walk
 ## goes first (whoever joined the colony first on a tie). Also lets go of any
-## producer whose facility is gone, unbuilt or paused. Call every frame.
+## producer whose facility is gone, unbuilt or paused, or who is too stressed
+## (R11). Call every frame.
 func assign_producers() -> void:
 	_release_stale()
 	var queue: Array[Facility] = _construction.facilities().filter(
@@ -132,7 +143,8 @@ func _release(facility_id: int) -> void:
 		walker.cancel(walker.tasks.current.id)
 
 
-## Drops production jobs whose facility is gone, unbuilt or paused.
+## Drops production jobs whose facility is gone, unbuilt or paused, and (R11)
+## those of producers whose Stress reached STRESS_STOP.
 func _release_stale() -> void:
 	var walkers := _board.walkers()
 	for colonist_id in walkers:
@@ -141,8 +153,40 @@ func _release_stale() -> void:
 		if task == null or not task.producing:
 			continue
 		var facility := _construction.find(task.facility_id)
-		if facility == null or not _is_production(facility) or facility.paused:
+		if facility == null or not _is_production(facility) or facility.paused \
+				or _too_stressed_to_keep(colonist_id, facility):
 			walker.cancel(task.id)
+
+
+## R11: true once the colonist's Stress is at the stop limit. Never true for
+## exempt facilities, without a colony, or for a colonist the colony does not
+## have (nothing to measure; the board and the colony let go of the dead).
+func _too_stressed_to_keep(colonist_id: int, facility: Facility) -> bool:
+	var stress := _stress_of(colonist_id)
+	return _limits_apply(facility) and stress >= STRESS_STOP
+
+
+## R11: Stress must be under the resume line; a colonist the colony does not
+## have (dead) is no candidate.
+func _rested_enough_to_start(colonist_id: int, facility: Facility) -> bool:
+	if not _limits_apply(facility):
+		return true
+	var stress := _stress_of(colonist_id)
+	return not is_nan(stress) and stress < STRESS_RESUME
+
+
+func _limits_apply(facility: Facility) -> bool:
+	return _colony != null and facility.production_priority < STRESS_EXEMPT_PRIORITY
+
+
+## The colonist's Stress, or NAN with no colony or no such colonist.
+func _stress_of(colonist_id: int) -> float:
+	if _colony == null:
+		return NAN
+	for colonist in _colony.colonists:
+		if colonist.id == colonist_id:
+			return colonist.psychology.stress
+	return NAN
 
 
 ## {id, cell} of the colonist with the shortest walk to a cell beside the
@@ -155,6 +199,8 @@ func _nearest_free_colonist(facility: Facility) -> Dictionary:
 	for colonist_id in walkers:
 		var walker: Wanderer = walkers[colonist_id]
 		if walker.tasks.current_priority() >= facility.production_priority:
+			continue
+		if not _rested_enough_to_start(colonist_id, facility):
 			continue
 		for spot in spots:
 			var steps := _steps(walker.cell, spot)

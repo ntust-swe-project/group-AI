@@ -264,14 +264,22 @@ func test_progress_is_kept_when_the_producer_leaves_and_comes_back():
 	_run(10.0)
 	var kept := production.progress_of(bay.id)
 	assert_gt(kept, 0.0)
+	var food_before := stock.amount(Stockpile.Kind.FOOD)
 	board.create(1, Vector2i(2, 5), 4)  # a 4-level order pulls them away
 	_tick(0.1)
 	assert_eq(production.producer_of(bay.id), -1)
 	assert_eq(production.progress_of(bay.id), kept)
-	_run(60.0)  # order done, they return to the job
+	var guard := 0
+	while not (production.producer_of(bay.id) == 1 and ann.is_working()) and guard < 400:
+		_tick(0.5)  # order done, they return to the job and start working
+		guard += 1
 	assert_eq(production.producer_of(bay.id), 1)
-	assert_gt(production.progress_of(bay.id) + stock.amount(Stockpile.Kind.FOOD), kept)
-	assert_not_null(ann)
+	# Nothing was lost while away: units made plus progress are still `kept`.
+	var done := float(stock.amount(Stockpile.Kind.FOOD) - food_before) + production.progress_of(bay.id)
+	assert_almost_eq(done, kept, 0.02)
+	_run(10.0)  # exactly 10 more seconds of work
+	var total := float(stock.amount(Stockpile.Kind.FOOD) - food_before) + production.progress_of(bay.id)
+	assert_almost_eq(total, kept + 10.0 / UNIT, 0.02)
 
 
 # --- A4: priority, preemption, pause ---
