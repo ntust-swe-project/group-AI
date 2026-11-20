@@ -9,6 +9,10 @@ var origin: Vector2i  # top-left cell
 var built := false
 var priority := Construction.DEFAULT_PRIORITY  # of its build job (R4, Q4)
 var work_done := 0.0  # game seconds of one-builder work so far; kept when builders leave (I5)
+## Feature 005, R5/R6: only meaningful for a built production facility.
+var production_priority := Production.DEFAULT_PRIORITY  # of its production job
+var paused := false  # no one works it while paused (R6)
+var output_done := 0.0  # game seconds worked toward the next unit; kept when the producer leaves
 
 
 func _init(facility_id: int, facility_kind: FacilityCatalog.Kind, top_left: Vector2i) -> void:

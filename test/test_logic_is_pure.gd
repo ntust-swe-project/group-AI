@@ -51,3 +51,7 @@ func test_feature_004_classes_are_not_nodes():
 
 func test_feature_005_classes_are_not_nodes():
 	_assert_pure(Stockpile.new())
+	var grid := StationGrid.new(Vector2i(3, 3))
+	var board := AssignmentBoard.new(grid)
+	var stock := Stockpile.new()
+	_assert_pure(Production.new(Construction.new(grid, board, stock), board, grid, stock))

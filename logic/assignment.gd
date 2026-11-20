@@ -24,6 +24,8 @@ var facility_id := NO_FACILITY  # the blueprint being built, for build jobs
 ## Feature 005, R3: a supply task waiting for its portion from the stockpile.
 ## Not timed even when the colonist stands at its cell.
 var on_hold := false
+## Feature 005, R5: a production job; `facility_id` holds the built facility.
+var producing := false
 
 
 func _init(assignment_id: int, target_cell: Vector2i, assignment_priority: int,
@@ -35,5 +37,7 @@ func _init(assignment_id: int, target_cell: Vector2i, assignment_priority: int,
 	work_seconds = seconds_of_work
 
 
+## True for any facility job (feature 004 build or feature 005 production):
+## timed by Construction/Production, not by the Wanderer.
 func is_build() -> bool:
 	return facility_id != NO_FACILITY
