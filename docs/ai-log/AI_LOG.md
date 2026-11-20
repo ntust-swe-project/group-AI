@@ -19,13 +19,14 @@ commit 這份文件時用 scope `ai-log`。
 | 2026-11-10 | Claude Code 2.1.312（Claude 桌面版 Code 分頁） | Claude Opus 5.5 | 無 hooks、無 subagent 編排，output style 為 Learning。自 PR #10 起，repo 內附的模板 skill 在處理 `group-AI/` 底下的檔案時可被載入；本列生效時尚未使用任何一個 | 無 |
 | 2026-11-10 | Claude Code 2.1.322（CLI） | Claude Opus 5.5 | 同第 4 列，另加 **subagent 編排**：審查 agent 與 S3 Verifier 改用新開的 subagent（repo 內附 Game Studios 的 `qa-tester`），只給 feature 檔與 diff，不給對話；讀網頁用 `web-fetch` subagent。另用 `superpowers` 的 `test-driven-development` skill 與本組 `/gut` skill | GUT 9.7.1 |
 | 2026-11-11 | Claude Code 2.1.312（Claude 桌面版 Code 分頁） | Claude Opus 5.5 | 組員 B 環境。無 hooks。**subagent 編排**：審查 agent（每個 task 一個新的 subagent）與 S3 Verifier，只給 feature 檔與 diff，不給對話。自 feature 003 T1 起本專案停用 Learning output style，改由 agent 實作、人類審查核准。未使用模板 skill | GUT 9.7.1 |
+| 2026-11-19 | Claude Code 2.1.312（Claude 桌面版 Code 分頁） | Claude Opus 5.5（主控）；subagent 用 Sonnet 5.5、Haiku 5.5、Opus 5.5 | 組員 B 環境。`superpowers` plugin **v7.0.2**（官方市集只剩此版）：SessionStart hook 注入 skill 指引，本次用 `brainstorming`、`writing-plans`、`subagent-driven-development`。**subagent 編排**：每個 task 一個 implementer subagent 與一個新的審查 subagent，S3 Verifier 一個；implementer 不 commit（`WORKFLOW.md` §3），由 Owner 核准 diff 後主控 commit。無自訂 hooks，本專案不用 Learning output style | GUT 9.7.1 |
 
 補充說明：
 
 - 2026-11-10 起，`VISION.md` 第 10 節提到的 `Donchitos/Claude-Code-Game-Studios` 模板**當工具**放進 repo（PR #10）：agent 與 skill 可用，但它的 hooks 未啟用、它的工作室流程不採用。裝了什麼、哪些不要用見 `docs/TOOLS.md`。repo 內附的工具 pull 下來對兩人都生效，組員 B 開始用時也在上表加一列。
 - `.claude/settings.local.json` 目前只關掉一個與本專題無關的 skill，沒有其他自動化設定。
 - `WORKFLOW.md` §3 的四個 agent 職能：Analyst／Planner／Implementer 仍是同一個 session 的不同階段；**Verifier（審查 agent 與 S3）自 feature 001 起由組員 A 改為獨立 subagent**，見上表第 6 列。
-- 上表各列**並存**，不是替換：第 1、3、4、6 列是組員 A 的環境，第 2、5 列是組員 B 的環境。兩人的工具版本、模型與設定不同，使用紀錄裡由誰的環境產出，看「任務」欄的說明。
+- 上表各列**並存**，不是替換：第 1、3、4、6 列是組員 A 的環境，第 2、5、7、8 列是組員 B 的環境。兩人的工具版本、模型與設定不同，使用紀錄裡由誰的環境產出，看「任務」欄的說明。
 
 ---
 
@@ -70,6 +71,12 @@ commit 這份文件時用 scope `ai-log`。
 | 33 | 2026-11-11 | feature 003 實作 T1–T6 與 S3（組員 B 環境） | 請 AI 逐 task 以 TDD 實作，每個 task 交新 subagent 審查後再核准，S3 交 Verifier | 修正後接受 | `INV` | 審查 agent 每個 task 都有發現，多數接受（測試只防太慢、空過的測試、A6 只驗一種條件等），4 項否決記為已知行為；AI 每次修正後以反向驗證確認測試抓得到；組員 B 改了補給點名稱，決定佇列顯示「前往」加完整名稱（I7 修改後納入） | 3h |
 | 34 | 2026-11-11 | 合併 004 與 feature 003 T7（組員 B 環境） | 請 AI 在開 PR 前檢查 `main` 的變動、解衝突並整合 004 | 部分接受 | | AI 模擬合併發現 004 已進 `main`、6 檔衝突，依 004 的約定由 003 解衝突並讓補給點不能放藍圖；`Stress` 不採 AI 建議的「玩家指派＋建造」，照組員 A 在 004 定的「任何工作都上升」；改到組員 A 的 `construction.gd` 與測試輔助函式；兩個已知問題留給 004 | 1.5h |
 | 35 | 2026-11-11 | PR #18（組員 B 環境） | 請 AI 起草 PR 內文並用 `gh` 開 PR，起草 Gate B 留言方向 | 接受 | | 自審 4 條刻意不預先打勾；留言草稿由組員 B 確認實際做過的事後送出 | 0.2h |
+| 36 | 2026-11-14 | 期中後分工（組員 B 環境） | 請 AI 依 repo 現況整理期中後待做清單與分工提案、改寫成群組訊息，並安裝 superpowers 與 Godot 指令 | 修正後接受 | | AI 的清單有兩處錯：「資源要等設施使用」（實際無依賴）、「003 的 `Stress` 由 B 改」（已在 `1f07d52` 完成），都由 AI 在下一輪自行更正；群組訊息應組員 B 要求改口語後送出 | 1.2h |
+| 37 | 2026-11-19 | feature 005 spec（組員 B 環境） | 請 AI 用 brainstorming 一次問一題，起草資源與生產的 spec | 修正後接受 | `INV` | 資源要同時撐生存與發展由組員 B 定；發展怎麼算、材料從哪來、生產何時停，AI 各列 2–3 案並推薦，組員 B 都採推薦；Q1–Q4 數值、I1–I7 全部採用。AI 發現 `Resource` 與 Godot 內建 class 撞名、補給完成才扣會讓搶最後一份的兩人把庫存扣成負數 | 1.0h |
+| 38 | 2026-11-20 | feature 005 plan 與 Gate A（組員 B 環境） | 請 AI 寫 plan、tasks，並代填 Gate A | 接受 | | plan 依 WORKFLOW 寫在 feature 檔，不照 superpowers 預設另開檔；Gate A 由 AI 機械檢查後代填，第一條「讀過全文」由組員 B 自行負責 | 0.4h |
+| 39 | 2026-11-20 | feature 005 實作 T1–T4（組員 B 環境） | 請 AI 用 subagent-driven 逐 task 實作，每個 task 交新審查 subagent，Owner 核准 diff 後才 commit | 修正後接受 | | 主控每次自己重跑全套；T3 先寫程式後寫測試、漏測一個分支，送審前退回補；T4 implementer 回報全過，主控重跑抓到測試 5 次錯 4 次（點地圖選人會點到別人），退回修一輪。組員 B 手動驗收 A9、A10 | 2.5h |
+| 40 | 2026-11-20 | feature 005 S3 與 T5（組員 B 環境） | 請 Opus Verifier 做整體審查與逐條驗收，再依結果改 spec、實作 T5 | 修正後接受 | `INV` | Verifier 寫模擬發現預設玩法約 1.5 天全員因壓力失能、一條斷言恆真；AI 列 A／B／C，組員 B 選 B（壓力門檻）並加「更急的可超過 70」，AI 解讀為優先度 4–5 不受限；T5 的 3 天模擬拿掉門檻會失敗 | 1.0h |
+| 41 | 2026-11-20 | PR #20 與 S5（組員 B 環境） | 請 AI 開 PR、起草 Gate B 留言方向，merge 後寫 run 檔、收尾 feature 檔與本紀錄 | 接受 | | 自審 4 條不預先打勾；`35211a1`（填驗收結果）在「開 PR」指示下 commit、沒有單獨核准 diff，AI 事後告知；工時由對話時間推估、組員 B 確認 | 0.4h |
 
 **結果**：`接受` ／ `修正後接受` ／ `部分接受` ／ `拒絕`
 
@@ -83,13 +90,13 @@ commit 這份文件時用 scope `ai-log`。
 
 | 項目 | 數 |
 | --- | --- |
-| 紀錄筆數 | 35 |
-| 接受 ／ 修正後接受 ／ 部分接受 ／ 拒絕 | 15 ／ 15 ／ 5 ／ 0 |
+| 紀錄筆數 | 41 |
+| 接受 ／ 修正後接受 ／ 部分接受 ／ 拒絕 | 17 ／ 19 ／ 5 ／ 0 |
 | `API` 筆數 | 1（#29） |
-| `INV` 筆數（含 `DUP`） | 4（#27、#29、#31、#33；共 13 項：feature 001 的 I1–I6 全部納入；feature 003 的 I1–I7 中 I4、I7 修改後納入、I6 部分納入） |
-| 累計工時 | 17.3h（組員 B 10.4h、組員 A 6.9h；組員 A 的工時由 commit 時間推估） |
+| `INV` 筆數（含 `DUP`） | 6（#27、#29、#31、#33、#37、#40；共 21 項：feature 001 的 I1–I6 全部納入；feature 003 的 I1–I7 中 I4、I7 修改後納入、I6 部分納入；feature 005 的 I1–I8 全部納入） |
+| 累計工時 | 23.8h（組員 B 16.9h、組員 A 6.9h；組員 A 的工時由 commit 時間推估，未含 002、004） |
 
-統計區間：2026-11-09 起（repo 初始化至 PR #18 merge）。
+統計區間：2026-11-09 起（repo 初始化至 PR #20 merge）。
 
 ---
 
